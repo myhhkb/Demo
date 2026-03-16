@@ -2,12 +2,99 @@
    只保留 Tailwind 无法覆盖的特殊样式
    ======================================== */
 
-/* 渐变色标题 */
+/* 渐变色标题（紫色 → 淡蓝色）*/
 .welcome-title {
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+    background: linear-gradient(90deg, #a78bfa 0%, #60a5fa 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+}
+
+/* 副标题颜色：深色模式半透明白，浅色模式中灰 */
+.welcome-subtitle {
+    color: rgba(255,255,255,0.45);
+}
+html:not(.dark) .welcome-subtitle {
+    color: #666666;
+}
+
+/* 卡片文字：浅色模式下改为深色 */
+html:not(.dark) .theme-card p {
+    color: #1a1a1a;
+}
+
+/* 输入框文字：浅色模式 */
+html:not(.dark) #messageInput {
+    color: #1a1a1a;
+}
+html:not(.dark) #messageInput::placeholder {
+    color: #999999;
+}
+
+/* 免责声明：浅色模式 */
+html:not(.dark) .footer-disclaimer {
+    color: rgba(0,0,0,0.25) !important;
+}
+
+/* 建议卡片悬停效果 */
+.suggestion-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    outline: 1px solid rgba(167, 139, 250, 0.3);
+}
+
+/* 输入框胶囊聚焦环 */
+#messageInput::placeholder {
+    color: rgba(148, 163, 184, 0.5);
+}
+
+/* 底部按钮悬停高亮 */
+#themeBtn:hover, #clearBtn:hover {
+    background: #2d3f55 !important;
+    color: #e2e8f0 !important;
+}
+html:not(.dark) #themeBtn:hover,
+html:not(.dark) #clearBtn:hover {
+    background: #cbd5e1 !important;
+    color: #334155 !important;
+}
+
+/* ---- 图片预览小圆圈（内嵌在胶囊输入框中）---- */
+.img-thumb {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    cursor: pointer;
+    border: 1.5px solid rgba(255,255,255,0.2);
+}
+.img-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.img-thumb .img-remove {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 13px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    cursor: pointer;
+    padding: 0;
+}
+.img-thumb:hover .img-remove {
+    opacity: 1;
 }
 
 /* 页面淡入动画 */

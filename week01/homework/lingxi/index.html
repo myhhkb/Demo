@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" class="h-full">
+<html lang="zh-CN" class="h-full dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,20 +24,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./css/index.css">
 </head>
-<body class="h-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans overflow-hidden">
+<body class="h-full font-sans overflow-hidden" style="background:#0f1423;color:#f1f5f9">
 
 <div class="flex flex-col h-screen">
 
-    <!-- 对话页顶部导航栏 -->
-    <header id="chatHeader" class="hidden items-center justify-between px-4 py-2.5 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex-shrink-0">
-        <button id="backBtn" class="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">
+    <!-- ===== 对话页顶部导航栏（D-02 锁定：返回主页在左侧）===== -->
+    <header id="chatHeader" class="hidden items-center justify-between px-4 py-2.5 flex-shrink-0"
+            style="border-bottom:1px solid rgba(255,255,255,0.08);background:#0f1423">
+        <button id="backBtn" class="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-white/10">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
             返回主页
         </button>
-        <span class="text-sm font-medium text-slate-400 dark:text-slate-500">灵犀 AI 助手</span>
-        <button id="themeBtn2" title="切换主题" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500 dark:text-slate-400">
+        <span class="text-sm font-medium text-slate-500">灵犀 AI 助手</span>
+        <!-- D-01 锁定：主题切换在右侧 -->
+        <button id="themeBtn2" title="切换主题"
+                class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors text-slate-400">
             <svg class="sun-icon w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="5"></circle>
                 <line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
@@ -51,117 +54,168 @@
         </button>
     </header>
 
-    <!-- 欢迎区域 -->
-    <div id="welcomeSection" class="flex-1 flex flex-col items-center justify-center px-6 py-10 overflow-y-auto animate-fadeIn">
-        <div class="text-center mb-14">
-            <h1 class="welcome-title text-5xl font-bold mb-3 tracking-tight">嗨，我是灵犀</h1>
-            <p class="text-lg text-slate-500 dark:text-slate-400 font-medium">我能帮你什么？</p>
+    <!-- ===== 欢迎区域 ===== -->
+    <div id="welcomeSection" class="flex-1 flex flex-col items-start justify-start px-6 pt-14 pb-6 overflow-y-auto animate-fadeIn">
+        <div class="w-full max-w-4xl mx-auto">
+
+            <!-- 标题区：左对齐，与卡片网格同宽 -->
+            <div class="mb-12">
+                <h1 class="welcome-title font-bold mb-4" style="font-size:3rem">嗨，我是灵犀</h1>
+                <p class="welcome-subtitle" style="font-size:1.5rem">我能帮你什么吗？</p>
+            </div>
+
+            <!-- 快捷建议卡片（图标绝对定位右下角）-->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+                <!-- 卡片1：铅笔图标，蓝色 -->
+                <div class="suggestion-card theme-card relative rounded-2xl p-5 cursor-pointer transition-all duration-200 overflow-hidden"
+                     style="background:#1e293b;min-height:130px"
+                     data-prompt="我是一名前端开发初学者，如何提升相关技能？">
+                    <p class="text-sm text-white leading-relaxed pr-12">我是一名前端开发初学者，如何提升相关技能？</p>
+                    <div class="absolute bottom-4 right-4 w-10 h-10 rounded-full flex items-center justify-center"
+                         style="background:rgba(59,130,246,0.15)">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- 卡片2：灯泡图标，绿色 -->
+                <div class="suggestion-card theme-card relative rounded-2xl p-5 cursor-pointer transition-all duration-200 overflow-hidden"
+                     style="background:#1e293b;min-height:130px"
+                     data-prompt="有哪些平价又新颖的生日礼物适合送朋友。">
+                    <p class="text-sm text-white leading-relaxed pr-12">有哪些平价又新颖的生日礼物适合送朋友。</p>
+                    <div class="absolute bottom-4 right-4 w-10 h-10 rounded-full flex items-center justify-center"
+                         style="background:rgba(34,197,94,0.15)">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2">
+                            <path d="M9 18h6"></path>
+                            <path d="M10 22h4"></path>
+                            <path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.5 4.5-3 6H8c-1.5-1.5-3-3.5-3-6a7 7 0 0 1 7-7z"></path>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- 卡片3：指南针图标，橙色 -->
+                <div class="suggestion-card theme-card relative rounded-2xl p-5 cursor-pointer transition-all duration-200 overflow-hidden"
+                     style="background:#1e293b;min-height:130px"
+                     data-prompt="准备在家里办一个大型家庭聚会，帮我计划。">
+                    <p class="text-sm text-white leading-relaxed pr-12">准备在家里办一个大型家庭聚会，帮我计划。</p>
+                    <div class="absolute bottom-4 right-4 w-10 h-10 rounded-full flex items-center justify-center"
+                         style="background:rgba(251,146,60,0.15)">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- 卡片4：扳手图标，紫色 -->
+                <div class="suggestion-card theme-card relative rounded-2xl p-5 cursor-pointer transition-all duration-200 overflow-hidden"
+                     style="background:#1e293b;min-height:130px"
+                     data-prompt="带小朋友去野餐，有什么好玩的活动建议吗？">
+                    <p class="text-sm text-white leading-relaxed pr-12">带小朋友去野餐，有什么好玩的活动建议吗？</p>
+                    <div class="absolute bottom-4 right-4 w-10 h-10 rounded-full flex items-center justify-center"
+                         style="background:rgba(167,139,250,0.15)">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2">
+                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                        </svg>
+                    </div>
+                </div>
+
+            </div>
         </div>
-
-        <!-- 快捷建议卡片 -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-4xl">
-            <div class="suggestion-card bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 cursor-pointer hover:-translate-y-1 hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 flex flex-col items-center gap-3 text-center"
-                 data-prompt="帮我写一个简单的Python爬虫，爬取网站的标题和链接">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center text-white" style="background:linear-gradient(135deg,#667eea,#764ba2)">
-                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
-                </div>
-                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">帮我写一个简单的Python爬虫，爬取网站的标题和链接</p>
-            </div>
-
-            <div class="suggestion-card bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 cursor-pointer hover:-translate-y-1 hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 flex flex-col items-center gap-3 text-center"
-                 data-prompt="有哪些学习JavaScript的好方法？">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center text-white" style="background:linear-gradient(135deg,#f093fb,#f5576c)">
-                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
-                </div>
-                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">有哪些学习JavaScript的好方法？</p>
-            </div>
-
-            <div class="suggestion-card bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 cursor-pointer hover:-translate-y-1 hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 flex flex-col items-center gap-3 text-center"
-                 data-prompt="请解释一下什么是RESTful API，并给出一个简单的例子">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center text-white" style="background:linear-gradient(135deg,#4facfe,#00f2fe)">
-                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
-                </div>
-                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">请解释一下什么是RESTful API，并给出一个简单的例子</p>
-            </div>
-
-            <div class="suggestion-card bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 cursor-pointer hover:-translate-y-1 hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-200 flex flex-col items-center gap-3 text-center"
-                 data-prompt="帮我生成一个创意的产品名称和标语">
-                <div class="w-12 h-12 rounded-full flex items-center justify-center text-white" style="background:linear-gradient(135deg,#fa709a,#fee140)">
-                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
-                </div>
-                <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">帮我生成一个创意的产品名称和标语</p>
-            </div>
-        </div>
-
-        <!-- 欢迎页主题切换 -->
-        <button id="themeBtn" title="切换主题" class="mt-10 w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-slate-500 dark:text-slate-400">
-            <svg class="sun-icon w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="5"></circle>
-                <line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                <line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-            </svg>
-            <svg class="moon-icon w-5 h-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            </svg>
-        </button>
     </div>
 
-    <!-- 对话区域 -->
+    <!-- ===== 对话区域 ===== -->
     <div id="chatSection" class="hidden flex-1 overflow-y-auto px-4 py-6">
         <div id="chatMessages" class="flex flex-col gap-5 max-w-3xl mx-auto"></div>
     </div>
 
-    <!-- 底部输入区 -->
-    <div class="flex-shrink-0 px-4 pb-5 pt-3 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-        <div class="max-w-3xl mx-auto">
-            <!-- 图片预览 -->
-            <div id="imagePreview" class="flex gap-2 mb-2 flex-wrap"></div>
+    <!-- ===== 底部输入区（与卡片网格宽度一致 max-w-4xl）===== -->
+    <div class="flex-shrink-0 px-6 pb-3 pt-3 theme-input-area" style="background:#0f1423">
+        <div class="max-w-4xl mx-auto">
 
-            <div class="flex items-end gap-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-2 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
-                <textarea
-                    id="messageInput"
-                    class="flex-1 bg-transparent text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 resize-none outline-none py-2 max-h-32"
-                    placeholder="在此输入您的问题..."
-                    rows="1"
-                ></textarea>
+            <!-- 输入行：胶囊 + 右侧按钮组 -->
+            <div class="flex items-center gap-3">
 
-                <div class="flex items-center gap-1.5 flex-shrink-0 pb-1">
-                    <!-- 上传图片 -->
-                    <label class="w-8 h-8 flex items-center justify-center rounded-full cursor-pointer text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="上传图片">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        <input type="file" id="imageUpload" accept="image/*" class="hidden">
-                    </label>
+                <!-- 胶囊形输入框 -->
+                <div class="flex-1 flex items-center gap-2 px-5 transition-all theme-input-pill"
+                     style="background:#1e293b;border-radius:9999px;min-height:52px">
 
-                    <!-- 清除对话 -->
-                    <button id="clearBtn" title="清除对话" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                    </button>
+                    <!-- 左侧：文字输入区 -->
+                    <textarea
+                        id="messageInput"
+                        class="flex-1 bg-transparent text-sm resize-none outline-none py-4 max-h-28"
+                        style="color:#f1f5f9;caret-color:#a78bfa"
+                        placeholder="有问题尽管问我"
+                        rows="1"
+                    ></textarea>
 
-                    <!-- 发送按钮 -->
-                    <button id="sendBtn" style="display:none" class="w-8 h-8 flex items-center justify-center rounded-full bg-blue-500 hover:bg-blue-600 text-white transition-colors">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-                        </svg>
-                    </button>
+                    <!-- 右侧功能区：回形针 + 图片预览小圆圈 + 发送/停止 -->
+                    <div class="flex items-center gap-2 flex-shrink-0">
 
-                    <!-- 停止按钮 -->
-                    <button id="stopBtn" style="display:none" class="w-8 h-8 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 text-white transition-colors">
-                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                            <rect x="6" y="6" width="12" height="12" rx="2"/>
-                        </svg>
-                    </button>
+                        <!-- 回形针图标 -->
+                        <label class="cursor-pointer transition-colors flex-shrink-0" style="color:#64748b" title="上传图片">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                            </svg>
+                            <input type="file" id="imageUpload" accept="image/*" class="hidden">
+                        </label>
+
+                        <!-- 图片预览小圆圈容器（上传后动态插入）-->
+                        <div id="imagePreview" class="flex items-center gap-1.5"></div>
+
+                        <!-- 发送按钮 -->
+                        <button id="sendBtn" style="display:none"
+                                class="w-8 h-8 flex items-center justify-center rounded-full bg-blue-500 hover:bg-blue-400 text-white transition-colors flex-shrink-0">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                            </svg>
+                        </button>
+
+                        <!-- 停止按钮 -->
+                        <button id="stopBtn" style="display:none"
+                                class="w-8 h-8 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-400 text-white transition-colors flex-shrink-0">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                <rect x="6" y="6" width="12" height="12" rx="2"/>
+                            </svg>
+                        </button>
+
+                    </div>
                 </div>
+
+                <!-- D-01 锁定：主题切换按钮在输入框右侧 -->
+                <button id="themeBtn" title="切换主题"
+                        class="w-12 h-12 flex items-center justify-center rounded-full flex-shrink-0 transition-colors"
+                        style="background:#1e293b;color:#64748b">
+                    <svg class="sun-icon w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="moon-icon w-5 h-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+
+                <!-- 清除按钮 -->
+                <button id="clearBtn" title="清除对话"
+                        class="w-12 h-12 flex items-center justify-center rounded-full flex-shrink-0 transition-colors"
+                        style="background:#1e293b;color:#64748b">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
             </div>
-            <p class="text-xs text-slate-400 dark:text-slate-600 text-center mt-2">按 Enter 发送，Shift + Enter 换行</p>
+
+            <!-- 页脚免责声明 -->
+            <p class="text-center mt-3 footer-disclaimer" style="font-size:11px;color:rgba(255,255,255,0.2)">
+                内容由 AI 大模型生成，请仔细甄别
+            </p>
         </div>
     </div>
 
