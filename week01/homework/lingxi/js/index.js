@@ -213,9 +213,13 @@ function addMessage(role, content, images) {
 
     if (role === 'ai') {
         const avatar = document.createElement('div');
-        avatar.className = 'w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 mt-1';
-        avatar.style.background = 'linear-gradient(135deg,#667eea,#764ba2)';
-        avatar.textContent = '灵';
+        avatar.className = 'ai-avatar flex-shrink-0 mt-1';
+
+        const avatarImg = document.createElement('img');
+        avatarImg.src = './assets/linxi.png';
+        avatarImg.alt = '灵犀';
+        avatarImg.className = 'ai-avatar-img';
+        avatar.appendChild(avatarImg);
 
         const bubble = document.createElement('div');
         bubble.className = 'ai-content max-w-[75%] bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl rounded-tl-sm px-4 py-3 text-sm border border-slate-200 dark:border-slate-700';
@@ -223,6 +227,8 @@ function addMessage(role, content, images) {
 
         wrap.appendChild(avatar);
         wrap.appendChild(bubble);
+        // 将头像元素挂到 wrap 上方便后续控制旋转
+        wrap._avatar = avatar;
     } else {
         const bubble = document.createElement('div');
         bubble.className = 'max-w-[75%] flex flex-col gap-2 items-end';
@@ -281,6 +287,8 @@ async function generateAIResponse(hasImages) {
 
     const msgWrap   = addMessage('ai', '');
     const bubble    = msgWrap.querySelector('.ai-content');
+    const avatar    = msgWrap._avatar;
+    if (avatar) avatar.classList.add('ai-avatar-spin');
     let   fullContent = '';
 
     // 有图片时使用视觉模型
@@ -349,6 +357,7 @@ async function generateAIResponse(hasImages) {
         }
     } finally {
         isGenerating = false;
+        if (avatar) avatar.classList.remove('ai-avatar-spin');
         updateSendBtnVisibility();
         stopBtn.style.display = 'none';
         currentAbortController = null;

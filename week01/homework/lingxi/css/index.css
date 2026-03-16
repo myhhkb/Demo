@@ -112,7 +112,40 @@ html:not(.dark) #clearBtn:hover {
     animation: fadeIn 0.45s ease both;
 }
 
-/* 消息滑入动画 */
+/* ---- AI 头像 ---- */
+.ai-avatar {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+}
+
+.ai-avatar-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(167,139,250,0.4);
+    box-shadow: 0 0 0 0 rgba(167,139,250,0);
+    transition: box-shadow 0.3s ease;
+    display: block;
+}
+
+/* 回答中：旋转 + 发光脉冲 */
+.ai-avatar-spin .ai-avatar-img {
+    animation: avatarRotate 2s linear infinite, avatarGlow 1.5s ease-in-out infinite;
+}
+
+@keyframes avatarRotate {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+@keyframes avatarGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(167,139,250,0); }
+    50%       { box-shadow: 0 0 10px 3px rgba(167,139,250,0.5); }
+}
+
+/* ---- 消息滑入动画 ---- */
 @keyframes slideIn {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
