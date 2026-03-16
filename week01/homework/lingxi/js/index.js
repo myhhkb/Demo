@@ -277,6 +277,7 @@ async function generateAIResponse(hasImages) {
     isGenerating = true;
     sendBtn.style.display = 'none';
     stopBtn.style.display = 'flex';
+    resetScrollState(); // 新消息开始，重置滚动状态
 
     const msgWrap   = addMessage('ai', '');
     const bubble    = msgWrap.querySelector('.ai-content');
@@ -449,7 +450,25 @@ function autoResizeTextarea() {
     messageInput.style.height = Math.min(messageInput.scrollHeight, 128) + 'px';
 }
 
+// 用户是否钉在底部（距底部 60px 以内视为「在底部」）
+let userScrolledUp = false;
+
+chatSection.addEventListener('scroll', () => {
+    const distFromBottom = chatSection.scrollHeight - chatSection.scrollTop - chatSection.clientHeight;
+    userScrolledUp = distFromBottom > 60;
+});
+
 function scrollToBottom() {
+    // 只有用户没有主动上滚时才自动跟随
+    if (userScrolledUp) return;
+    requestAnimationFrame(() => {
+        chatSection.scrollTop = chatSection.scrollHeight;
+    });
+}
+
+// 新消息开始生成时，重置滚动状态并滚到底部
+function resetScrollState() {
+    userScrolledUp = false;
     requestAnimationFrame(() => {
         chatSection.scrollTop = chatSection.scrollHeight;
     });
