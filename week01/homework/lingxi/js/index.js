@@ -161,7 +161,9 @@ function getApiKey() {
 // ==================== 消息发送 ====================
 function sendMessage() {
     const message = messageInput.value.trim();
-    if (!message || isGenerating) return;
+    const hasImages = uploadedImages.length > 0;
+    if (!message && !hasImages) return;
+    if (isGenerating) return;
 
     if (!getApiKey()) {
         alert('API Key 未设置，请检查 js/config.js 文件');
@@ -170,23 +172,46 @@ function sendMessage() {
 
     if (conversationHistory.length === 0) enterChat();
 
-    addMessage('user', message);
+    // 构建用户消息内容（支持多模态）
+    let userContent;
+    if (hasImages) {
+        // 使用 content 数组格式（视觉模型格式）
+        userContent = [];
+        // 先放图片
+        uploadedImages.forEach(img => {
+            userContent.push({
+                type: 'image_url',
+                image_url: { url: img.data }
+            });
+        });
+        // 再放文字
+        if (message) {
+            userContent.push({ type: 'text', text: message });
+        } else {
+            userContent.push({ type: 'text', text: '请描述这张图片的内容。' });
+        }
+    } else {
+        userContent = message;
+    }
+
+    // 显示用户消息气泡（文字 + 图片缩略图）
+    addMessage('user', message || '（图片）', uploadedImages.slice());
+
     messageInput.value = '';
     uploadedImages     = [];
     imagePreview.innerHTML = '';
     updateSendBtnVisibility();
     autoResizeTextarea();
 
-    conversationHistory.push({ role: 'user', content: message });
-    generateAIResponse();
+    conversationHistory.push({ role: 'user', content: userContent });
+    generateAIResponse(hasImages);
 }
 
-function addMessage(role, content) {
+function addMessage(role, content, images) {
     const wrap = document.createElement('div');
     wrap.className = `flex gap-3 message-slide ${role === 'user' ? 'justify-end' : 'justify-start'}`;
 
     if (role === 'ai') {
-        // 头像
         const avatar = document.createElement('div');
         avatar.className = 'w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 mt-1';
         avatar.style.background = 'linear-gradient(135deg,#667eea,#764ba2)';
@@ -200,8 +225,45 @@ function addMessage(role, content) {
         wrap.appendChild(bubble);
     } else {
         const bubble = document.createElement('div');
-        bubble.className = 'max-w-[75%] bg-blue-500 text-white rounded-2xl rounded-tr-sm px-4 py-3 text-sm whitespace-pre-wrap break-words';
-        bubble.textContent = content;
+        bubble.className = 'max-w-[75%] flex flex-col gap-2 items-end';
+
+        // 文字气泡（先渲染）
+        if (content && content !== '（图片）') {
+            const textBubble = document.createElement('div');
+            textBubble.className = 'user-text-bubble';
+            textBubble.textContent = content;
+            bubble.appendChild(textBubble);
+        }
+
+        // 图片（若有，展示在文字下方）
+        if (images && images.length > 0) {
+            images.forEach(img => {
+                const imgWrap = document.createElement('div');
+                imgWrap.className = 'user-img-bubble';
+
+                // 加载占位
+                const placeholder = document.createElement('div');
+                placeholder.className = 'user-img-placeholder';
+                imgWrap.appendChild(placeholder);
+
+                const imgEl = document.createElement('img');
+                imgEl.alt   = img.name;
+                imgEl.className = 'user-img';
+                imgEl.style.opacity = '0';
+                imgEl.onload = () => {
+                    placeholder.style.display = 'none';
+                    imgEl.style.opacity = '1';
+                };
+                imgEl.src = img.data;
+
+                // 点击放大
+                imgEl.addEventListener('click', () => openImageLightbox(img.data));
+
+                imgWrap.appendChild(imgEl);
+                bubble.appendChild(imgWrap);
+            });
+        }
+
         wrap.appendChild(bubble);
     }
 
@@ -211,7 +273,7 @@ function addMessage(role, content) {
 }
 
 // ==================== AI 响应生成 ====================
-async function generateAIResponse() {
+async function generateAIResponse(hasImages) {
     isGenerating = true;
     sendBtn.style.display = 'none';
     stopBtn.style.display = 'flex';
@@ -219,6 +281,9 @@ async function generateAIResponse() {
     const msgWrap   = addMessage('ai', '');
     const bubble    = msgWrap.querySelector('.ai-content');
     let   fullContent = '';
+
+    // 有图片时使用视觉模型
+    const model = hasImages ? 'qwen-vl-plus' : 'qwen-plus';
 
     try {
         currentAbortController = new AbortController();
@@ -230,7 +295,7 @@ async function generateAIResponse() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'qwen-plus',
+                model,
                 messages: conversationHistory,
                 stream: true
             }),
@@ -254,7 +319,7 @@ async function generateAIResponse() {
 
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split('\n');
-            buffer = lines.pop(); // 保留可能不完整的最后一行
+            buffer = lines.pop();
 
             for (const line of lines) {
                 const trimmed = line.trim();
@@ -291,6 +356,20 @@ async function generateAIResponse() {
 
 function stopGeneration() {
     currentAbortController?.abort();
+}
+
+// ==================== 图片灯箱（点击放大）====================
+function openImageLightbox(src) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out;backdrop-filter:blur(4px)';
+
+    const img = document.createElement('img');
+    img.src = src;
+    img.style.cssText = 'max-width:90vw;max-height:90vh;border-radius:12px;box-shadow:0 24px 64px rgba(0,0,0,0.6);object-fit:contain;transition:transform 0.2s ease';
+
+    overlay.appendChild(img);
+    overlay.addEventListener('click', () => overlay.remove());
+    document.body.appendChild(overlay);
 }
 
 // ==================== 代码块高亮 + 复制 ====================

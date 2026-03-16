@@ -238,6 +238,71 @@ html:not(.dark) #clearBtn:hover {
 }
 .copy-code-btn:hover { background: rgba(255,255,255,0.15); }
 
+/* ---- 用户消息图片气泡 ---- */
+.user-text-bubble {
+    background: #3b82f6;
+    color: white;
+    border-radius: 16px 16px 4px 16px;
+    padding: 10px 16px;
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+    word-break: break-words;
+    line-height: 1.6;
+}
+
+.user-img-bubble {
+    position: relative;
+    background: #1e293b;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+    max-width: 280px;
+    min-width: 80px;
+    min-height: 60px;
+}
+
+.user-img-placeholder {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #1e293b 0%, #2d3f55 100%);
+    animation: shimmer 1.4s ease infinite;
+}
+
+@keyframes shimmer {
+    0%   { opacity: 0.6; }
+    50%  { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+.user-img {
+    display: block;
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    max-height: 320px;
+    object-fit: cover;
+    border-radius: 14px;
+    cursor: zoom-in;
+    transition: opacity 0.25s ease, transform 0.2s ease, filter 0.2s ease;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+.user-img:hover {
+    transform: scale(1.02);
+    filter: brightness(1.08);
+}
+
+/* 浅色模式下图片气泡 */
+html:not(.dark) .user-img-bubble {
+    background: #e2e8f0;
+    border-color: rgba(0,0,0,0.08);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+html:not(.dark) .user-img-placeholder {
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+}
+
 /* ---- 图片预览 ---- */
 .preview-item {
     position: relative;
