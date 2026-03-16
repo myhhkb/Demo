@@ -6,6 +6,12 @@ x64
 .vs
 *.exe
 /test
+# ==================== API Key 配置（绝对不能提交）====================
+week01/homework/lingxi/js/config.js
+week01/homework/lingxi/ISSUES.md
+week01/homework/lingxi/README.md
+
+
 
 # !是不忽略的意思
 !*.sln  
@@ -23,3 +29,4 @@ yarn-error.log*
 .pnp
 .pnp.js
 .DS_Store
+

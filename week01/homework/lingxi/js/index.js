@@ -1,0 +1,328 @@
+// ==================== 配置和常量 ====================
+const API_KEY_STORAGE = 'LINGXI_API_KEY';
+const THEME_STORAGE = 'LINGXI_THEME';
+const ALIYUN_API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
+
+// ==================== DOM 元素 ====================
+const welcomeSection  = document.getElementById('welcomeSection');
+const chatSection     = document.getElementById('chatSection');
+const chatHeader      = document.getElementById('chatHeader');
+const chatMessages    = document.getElementById('chatMessages');
+const messageInput    = document.getElementById('messageInput');
+const sendBtn         = document.getElementById('sendBtn');
+const stopBtn         = document.getElementById('stopBtn');
+const clearBtn        = document.getElementById('clearBtn');
+const backBtn         = document.getElementById('backBtn');
+const imageUpload     = document.getElementById('imageUpload');
+const imagePreview    = document.getElementById('imagePreview');
+const themeBtn        = document.getElementById('themeBtn');   // 欢迎页主题按钮
+const themeBtn2       = document.getElementById('themeBtn2');  // 对话页主题按钮
+const suggestionCards = document.querySelectorAll('.suggestion-card');
+
+// ==================== 状态管理 ====================
+let conversationHistory    = [];
+let isGenerating           = false;
+let currentAbortController = null;
+let uploadedImages         = [];
+
+// ==================== 初始化 ====================
+document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
+    setupEventListeners();
+});
+
+// ==================== 主题管理 ====================
+function initTheme() {
+    const saved      = localStorage.getItem(THEME_STORAGE);
+    const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark     = saved ? saved === 'dark' : preferDark;
+    if (isDark) document.documentElement.classList.add('dark');
+    syncThemeIcons();
+}
+
+function toggleTheme() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem(THEME_STORAGE, isDark ? 'dark' : 'light');
+    syncThemeIcons();
+}
+
+function syncThemeIcons() {
+    const isDark = document.documentElement.classList.contains('dark');
+    [themeBtn, themeBtn2].forEach(btn => {
+        if (!btn) return;
+        btn.querySelector('.sun-icon').classList.toggle('hidden', isDark);
+        btn.querySelector('.moon-icon').classList.toggle('hidden', !isDark);
+    });
+}
+
+// ==================== 事件监听 ====================
+function setupEventListeners() {
+    themeBtn.addEventListener('click', toggleTheme);
+    themeBtn2.addEventListener('click', toggleTheme);
+    sendBtn.addEventListener('click', sendMessage);
+    stopBtn.addEventListener('click', stopGeneration);
+    clearBtn.addEventListener('click', clearConversation);
+    backBtn.addEventListener('click', goHome);
+    imageUpload.addEventListener('change', handleImageUpload);
+
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    messageInput.addEventListener('input', () => {
+        autoResizeTextarea();
+        updateSendBtnVisibility();
+    });
+
+    suggestionCards.forEach(card => {
+        card.addEventListener('click', () => {
+            messageInput.value = card.dataset.prompt;
+            updateSendBtnVisibility();
+            autoResizeTextarea();
+            sendMessage();
+        });
+    });
+}
+
+// ==================== 页面状态切换 ====================
+function enterChat() {
+    welcomeSection.classList.add('hidden');
+    chatSection.classList.remove('hidden');
+    chatSection.classList.add('flex');
+    chatHeader.classList.remove('hidden');
+    chatHeader.classList.add('flex');
+}
+
+function goHome() {
+    // 不清除历史，只是回到欢迎界面
+    chatSection.classList.add('hidden');
+    chatSection.classList.remove('flex');
+    chatHeader.classList.add('hidden');
+    chatHeader.classList.remove('flex');
+    welcomeSection.classList.remove('hidden');
+    welcomeSection.classList.add('animate-fadeIn');
+    // 重置动画
+    welcomeSection.style.animation = 'none';
+    requestAnimationFrame(() => { welcomeSection.style.animation = ''; });
+}
+
+// ==================== API Key ====================
+function getApiKey() {
+    return localStorage.getItem(API_KEY_STORAGE);
+}
+
+// ==================== 消息发送 ====================
+function sendMessage() {
+    const message = messageInput.value.trim();
+    if (!message || isGenerating) return;
+
+    if (!getApiKey()) {
+        alert('API Key 未设置，请检查 js/config.js 文件');
+        return;
+    }
+
+    if (conversationHistory.length === 0) enterChat();
+
+    addMessage('user', message);
+    messageInput.value = '';
+    uploadedImages     = [];
+    imagePreview.innerHTML = '';
+    updateSendBtnVisibility();
+    autoResizeTextarea();
+
+    conversationHistory.push({ role: 'user', content: message });
+    generateAIResponse();
+}
+
+function addMessage(role, content) {
+    const wrap = document.createElement('div');
+    wrap.className = `flex gap-3 message-slide ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+
+    if (role === 'ai') {
+        // 头像
+        const avatar = document.createElement('div');
+        avatar.className = 'w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 mt-1';
+        avatar.style.background = 'linear-gradient(135deg,#667eea,#764ba2)';
+        avatar.textContent = '灵';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'ai-content max-w-[75%] bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl rounded-tl-sm px-4 py-3 text-sm border border-slate-200 dark:border-slate-700';
+        bubble.innerHTML = content;
+
+        wrap.appendChild(avatar);
+        wrap.appendChild(bubble);
+    } else {
+        const bubble = document.createElement('div');
+        bubble.className = 'max-w-[75%] bg-blue-500 text-white rounded-2xl rounded-tr-sm px-4 py-3 text-sm whitespace-pre-wrap break-words';
+        bubble.textContent = content;
+        wrap.appendChild(bubble);
+    }
+
+    chatMessages.appendChild(wrap);
+    scrollToBottom();
+    return wrap;
+}
+
+// ==================== AI 响应生成 ====================
+async function generateAIResponse() {
+    isGenerating = true;
+    sendBtn.style.display = 'none';
+    stopBtn.style.display = 'flex';
+
+    const msgWrap   = addMessage('ai', '');
+    const bubble    = msgWrap.querySelector('.ai-content');
+    let   fullContent = '';
+
+    try {
+        currentAbortController = new AbortController();
+
+        const response = await fetch(ALIYUN_API_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${getApiKey()}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'qwen-plus',
+                messages: conversationHistory,
+                stream: true
+            }),
+            signal: currentAbortController.signal
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            let errMsg = `HTTP ${response.status}`;
+            try { errMsg = JSON.parse(errText).error?.message || errMsg; } catch (_) {}
+            throw new Error(errMsg);
+        }
+
+        const reader  = response.body.getReader();
+        const decoder = new TextDecoder();
+        let   buffer  = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop(); // 保留可能不完整的最后一行
+
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed || trimmed === 'data: [DONE]') continue;
+                if (trimmed.startsWith('data:')) {
+                    try {
+                        const data  = JSON.parse(trimmed.slice(5).trim());
+                        const delta = data.choices?.[0]?.delta?.content;
+                        if (delta) {
+                            fullContent += delta;
+                            bubble.innerHTML = marked.parse(fullContent);
+                            bubble.querySelectorAll('pre code:not(.hljs)').forEach(addCodeBlockHeader);
+                            scrollToBottom();
+                        }
+                    } catch (_) { /* 忽略不完整的 JSON 片段 */ }
+                }
+            }
+        }
+
+        conversationHistory.push({ role: 'assistant', content: fullContent });
+
+    } catch (error) {
+        if (error.name !== 'AbortError') {
+            console.error('生成响应出错:', error);
+            bubble.innerHTML = `<p class="text-red-400">错误：${error.message}</p>`;
+        }
+    } finally {
+        isGenerating = false;
+        updateSendBtnVisibility();
+        stopBtn.style.display = 'none';
+        currentAbortController = null;
+    }
+}
+
+function stopGeneration() {
+    currentAbortController?.abort();
+}
+
+// ==================== 代码块高亮 + 复制 ====================
+function addCodeBlockHeader(codeBlock) {
+    const pre = codeBlock.parentElement;
+    if (pre.previousElementSibling?.classList.contains('code-block-header')) return;
+
+    const lang = (codeBlock.className.match(/language-(\w+)/) || [])[1] || 'code';
+
+    const header = document.createElement('div');
+    header.className = 'code-block-header';
+    header.innerHTML = `<span>${lang}</span><button class="copy-code-btn">复制</button>`;
+
+    header.querySelector('.copy-code-btn').addEventListener('click', (e) => {
+        navigator.clipboard.writeText(codeBlock.textContent).then(() => {
+            e.target.textContent = '已复制';
+            setTimeout(() => { e.target.textContent = '复制'; }, 2000);
+        });
+    });
+
+    try { hljs.highlightElement(codeBlock); } catch (_) {}
+    pre.parentElement.insertBefore(header, pre);
+}
+
+// ==================== 图片上传 ====================
+function handleImageUpload(e) {
+    Array.from(e.target.files).forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            uploadedImages.push({ name: file.name, data: ev.target.result });
+            renderImagePreview();
+        };
+        reader.readAsDataURL(file);
+    });
+    imageUpload.value = '';
+}
+
+function renderImagePreview() {
+    imagePreview.innerHTML = '';
+    uploadedImages.forEach((img, idx) => {
+        const item = document.createElement('div');
+        item.className = 'preview-item';
+        item.innerHTML = `<img src="${img.data}" alt="${img.name}"><button class="preview-remove">×</button>`;
+        item.querySelector('.preview-remove').addEventListener('click', () => {
+            uploadedImages.splice(idx, 1);
+            renderImagePreview();
+        });
+        imagePreview.appendChild(item);
+    });
+}
+
+// ==================== 清除对话 ====================
+function clearConversation() {
+    if (!confirm('确定要清除所有对话吗？')) return;
+    conversationHistory    = [];
+    chatMessages.innerHTML = '';
+    uploadedImages         = [];
+    imagePreview.innerHTML = '';
+    messageInput.value     = '';
+    goHome();
+    updateSendBtnVisibility();
+}
+
+// ==================== UI 辅助 ====================
+function updateSendBtnVisibility() {
+    const has = messageInput.value.trim().length > 0;
+    sendBtn.style.display = (has && !isGenerating) ? 'flex' : 'none';
+}
+
+function autoResizeTextarea() {
+    messageInput.style.height = 'auto';
+    messageInput.style.height = Math.min(messageInput.scrollHeight, 128) + 'px';
+}
+
+function scrollToBottom() {
+    requestAnimationFrame(() => {
+        chatSection.scrollTop = chatSection.scrollHeight;
+    });
+}
