@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>嗨，我是灵犀 - AI 对话助手</title>
+    <title>WPS 灵犀</title>
+    <link rel="icon" href="./assets/logo.png" type="image/png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -37,7 +38,10 @@
             </svg>
             返回主页
         </button>
-        <span class="text-sm font-medium text-slate-500">灵犀 AI 助手</span>
+        <span class="flex items-center gap-2 text-sm font-medium text-slate-500">
+            <img src="./assets/logo.png" alt="灵犀" class="w-5 h-5 rounded" style="mix-blend-mode:screen" onerror="this.style.display='none'">
+            灵犀 AI 助手
+        </span>
     </header>
 
     <!-- ===== 欢迎区域 ===== -->
@@ -142,7 +146,7 @@
                     <div class="absolute flex items-center gap-1.5" style="bottom:9px;right:20px;max-width:55%">
 
                         <!-- 回形针图标 -->
-                        <label class="cursor-pointer transition-colors flex-shrink-0 upload-label" title="上传图片">
+                        <label class="cursor-pointer transition-colors flex-shrink-0 upload-label" data-tooltip="上传图片">
                             <svg class="w-5 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
                             </svg>
@@ -153,7 +157,7 @@
                         <div id="imagePreview" class="flex items-center gap-1 flex-wrap"></div>
 
                         <!-- 发送按钮 -->
-                        <button id="sendBtn" style="display:none"
+                        <button id="sendBtn" style="display:none" data-tooltip="发送消息"
                                 class="w-7 h-7 flex items-center justify-center rounded-full bg-blue-500 hover:bg-blue-400 text-white transition-all flex-shrink-0">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <line x1="12" y1="19" x2="12" y2="5"></line>
@@ -162,7 +166,7 @@
                         </button>
 
                         <!-- 停止按钮 -->
-                        <button id="stopBtn" style="display:none"
+                        <button id="stopBtn" style="display:none" data-tooltip="停止生成"
                                 class="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-400 text-white transition-colors flex-shrink-0">
                             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
                                 <rect x="6" y="6" width="12" height="12" rx="2"/>
@@ -174,7 +178,7 @@
                 </div>
 
                 <!-- D-01 锁定：主题切换按钮在输入框右侧 -->
-                <button id="themeBtn" title="切换主题"
+                <button id="themeBtn" data-tooltip="切换主题"
                         class="w-12 flex items-center justify-center rounded-full flex-shrink-0 transition-colors"
                         style="background:#1e293b;color:#64748b;height:45px">
                     <svg class="sun-icon w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -190,7 +194,7 @@
                 </button>
 
                 <!-- 清除按钮 -->
-                <button id="clearBtn" title="清除对话"
+                <button id="clearBtn" data-tooltip="清除对话"
                         class="w-12 flex items-center justify-center rounded-full flex-shrink-0 transition-colors"
                         style="background:#1e293b;color:#64748b;height:45px">
                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

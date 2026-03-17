@@ -69,7 +69,60 @@ html:not(.dark) .footer-disclaimer {
     color: rgba(148, 163, 184, 0.5);
 }
 
-/* 返回按钮悬停：深色模式白色，浅色模式深灰 */
+/* ---- 自定义 Tooltip ---- */
+[data-tooltip] {
+    position: relative;
+}
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) scale(0.9);
+    background: rgba(15, 23, 42, 0.92);
+    color: #f1f5f9;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.4;
+    padding: 5px 10px;
+    border-radius: 8px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    backdrop-filter: blur(8px);
+    z-index: 999;
+}
+[data-tooltip]::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% + 3px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(15, 23, 42, 0.92);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 999;
+}
+[data-tooltip]:hover::after,
+[data-tooltip]:hover::before {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+}
+html:not(.dark) [data-tooltip]::after {
+    background: rgba(30, 41, 59, 0.95);
+    color: #f8fafc;
+    border-color: rgba(0,0,0,0.1);
+}
+html:not(.dark) [data-tooltip]::before {
+    border-top-color: rgba(30, 41, 59, 0.95);
+}
+
+/* ---- 返回按钮悬停 ---- */
 #backBtn:hover {
     background: rgba(255,255,255,0.1);
     color: #ffffff;
