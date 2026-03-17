@@ -129,8 +129,11 @@ html:not(.dark) #clearBtn:hover {
 
 /* ---- 思考中占位动画 ---- */
 .thinking-dots {
-    color: rgba(255,255,255,0.45);
+    color: #ffffff;
     font-size: 0.875rem;
+}
+html:not(.dark) .thinking-dots {
+    color: #1a1a1a;
 }
 
 .thinking-dots .dots {
@@ -139,7 +142,7 @@ html:not(.dark) #clearBtn:hover {
 }
 
 @keyframes dotsBreath {
-    0%, 100% { opacity: 0.2; }
+    0%, 100% { opacity: 0.3; }
     50%       { opacity: 1; }
 }
 
