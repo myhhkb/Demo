@@ -472,7 +472,7 @@ function updateSendBtnVisibility() {
 
 function autoResizeTextarea() {
     messageInput.style.height = 'auto';
-    messageInput.style.height = Math.min(messageInput.scrollHeight, 128) + 'px';
+    messageInput.style.height = Math.min(messageInput.scrollHeight, 160) + 'px';
 }
 
 // 用户是否钉在底部（距底部 60px 以内视为「在底部」）
