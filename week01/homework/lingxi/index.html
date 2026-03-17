@@ -140,34 +140,35 @@
             <div class="flex items-end gap-3">
 
                 <!-- 胶囊形输入框 -->
-                <div class="flex-1 flex items-end gap-2 px-5 py-3 transition-all theme-input-pill"
-                     style="background:#1e293b;border-radius:24px;min-height:45px">
+                <div class="flex-1 relative transition-all theme-input-pill"
+                     style="background:#1e293b;border-radius:24px;min-height:45px;overflow:hidden">
 
-                    <!-- 左侧：文字输入区（右侧预留空间给绝对定位按钮）-->
+                    <!-- textarea：全宽，右侧留出滚动条空间 -->
                     <textarea
                         id="messageInput"
-                        class="flex-1 bg-transparent text-sm resize-none outline-none max-h-40"
-                        style="color:#f1f5f9;caret-color:#a78bfa;padding:0;margin:0;line-height:1.5;height:25px;overflow-y:hidden"
+                        class="w-full bg-transparent text-sm resize-none outline-none max-h-40 block"
+                        style="color:#f1f5f9;caret-color:#a78bfa;padding:12px 64px 12px 20px;margin:0;line-height:1.5;height:45px;overflow-y:hidden;box-sizing:border-box;width:calc(100% - 10px);margin-right:10px"
                         placeholder="有问题尽管问我"
                         rows="1"
                     ></textarea>
 
-                    <!-- 右侧功能区：固定高度=单行文字高度，按钮视觉溢出但不撑高容器 -->
-                    <div class="flex items-center gap-1 flex-shrink-0 -mr-2" style="height:21px;overflow:visible">
-                        <!-- 回形针图标（竖向）-->
+                    <!-- 悬浮控制组：bottom 定位，单行时与文字同高，多行时沉至右下角 -->
+                    <div class="absolute flex items-center gap-1.5" style="bottom:9px;right:20px;max-width:55%">
+
+                        <!-- 回形针图标 -->
                         <label class="cursor-pointer transition-colors flex-shrink-0 upload-label" title="上传图片">
-                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="w-5 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
                             </svg>
                             <input type="file" id="imageUpload" accept="image/*" class="hidden">
                         </label>
 
                         <!-- 图片预览小圆圈容器 -->
-                        <div id="imagePreview" class="flex items-center gap-1"></div>
+                        <div id="imagePreview" class="flex items-center gap-1 flex-wrap"></div>
 
-                        <!-- 发送按钮：w-8 h-8，紧贴右边缘 -->
+                        <!-- 发送按钮 -->
                         <button id="sendBtn" style="display:none"
-                                class="w-8 h-8 flex items-center justify-center rounded-full bg-blue-500 hover:bg-blue-400 text-white transition-all flex-shrink-0">
+                                class="w-7 h-7 flex items-center justify-center rounded-full bg-blue-500 hover:bg-blue-400 text-white transition-all flex-shrink-0">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <line x1="12" y1="19" x2="12" y2="5"></line>
                                 <polyline points="5 12 12 5 19 12"></polyline>
@@ -176,11 +177,12 @@
 
                         <!-- 停止按钮 -->
                         <button id="stopBtn" style="display:none"
-                                class="w-8 h-8 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-400 text-white transition-colors flex-shrink-0">
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                class="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-400 text-white transition-colors flex-shrink-0">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
                                 <rect x="6" y="6" width="12" height="12" rx="2"/>
                             </svg>
                         </button>
+
                     </div>
 
                 </div>

@@ -203,6 +203,7 @@ function sendMessage() {
     messageInput.value = '';
     uploadedImages     = [];
     imagePreview.innerHTML = '';
+    updateTextareaPadding();
     updateSendBtnVisibility();
     autoResizeTextarea();
 
@@ -450,6 +451,18 @@ function renderImagePreview() {
         });
         imagePreview.appendChild(thumb);
     });
+    updateTextareaPadding();
+}
+
+// 根据控制组实际宽度动态更新 textarea 右侧 padding，防止文字被遮挡
+function updateTextareaPadding() {
+    requestAnimationFrame(() => {
+        const controlGroup = document.querySelector('.theme-input-pill .absolute');
+        if (!controlGroup) return;
+        const groupWidth = controlGroup.offsetWidth;
+        // 右侧 padding = 控制组宽度 + 右边距(12) + 额外间距(8)
+        messageInput.style.paddingRight = (groupWidth + 20) + 'px';
+    });
 }
 
 // ==================== 清除对话 ====================
@@ -471,12 +484,12 @@ function updateSendBtnVisibility() {
 }
 
 function autoResizeTextarea() {
-    // 重置为单行基准高度，再按内容扩展
-    messageInput.style.height = '21px';
-    const newHeight = Math.min(messageInput.scrollHeight, 160);
+    // 基准高度 = padding-top(12) + 单行内容(21) + padding-bottom(12) = 45px
+    const BASE_HEIGHT = 45;
+    messageInput.style.height = BASE_HEIGHT + 'px';
+    const newHeight = Math.min(Math.max(messageInput.scrollHeight, BASE_HEIGHT), BASE_HEIGHT + 120);
     messageInput.style.height = newHeight + 'px';
-    // 超出最大高度时显示滚动条
-    messageInput.style.overflowY = newHeight >= 160 ? 'auto' : 'hidden';
+    messageInput.style.overflowY = newHeight >= BASE_HEIGHT + 120 ? 'auto' : 'hidden';
 }
 
 // 用户是否钉在底部（距底部 60px 以内视为「在底部」）
