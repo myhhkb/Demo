@@ -471,8 +471,12 @@ function updateSendBtnVisibility() {
 }
 
 function autoResizeTextarea() {
-    messageInput.style.height = 'auto';
-    messageInput.style.height = Math.min(messageInput.scrollHeight, 160) + 'px';
+    // 重置为单行基准高度，再按内容扩展
+    messageInput.style.height = '21px';
+    const newHeight = Math.min(messageInput.scrollHeight, 160);
+    messageInput.style.height = newHeight + 'px';
+    // 超出最大高度时显示滚动条
+    messageInput.style.overflowY = newHeight >= 160 ? 'auto' : 'hidden';
 }
 
 // 用户是否钉在底部（距底部 60px 以内视为「在底部」）
