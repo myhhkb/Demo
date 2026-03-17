@@ -18,28 +18,43 @@
 
 /* 副标题颜色：深色模式半透明白，浅色模式中灰 */
 .welcome-subtitle {
-    color: rgba(255,255,255,0.45);
+    color: #ffffff;
 }
 html:not(.dark) .welcome-subtitle {
-    color: #666666;
-}
-
-/* 卡片文字：浅色模式下改为深色 */
-html:not(.dark) .theme-card p {
     color: #1a1a1a;
 }
 
-/* 输入框文字：浅色模式 */
-html:not(.dark) #messageInput {
-    color: #1a1a1a;
+/* 占位符：深色白色，浅色深灰 */
+#messageInput::placeholder {
+    color: rgba(255,255,255,0.6);
 }
 html:not(.dark) #messageInput::placeholder {
-    color: #999999;
+    color: rgba(26,26,26,0.5);
 }
 
-/* 免责声明：浅色模式 */
+/* 回形针图标：深色白色，浅色深灰 */
+.upload-label {
+    color: #ffffff;
+}
+html:not(.dark) .upload-label {
+    color: #1a1a1a;
+}
+
+/* 主题/清除按钮图标：深色白色，浅色深灰 */
+#themeBtn, #clearBtn {
+    color: #ffffff;
+}
+html:not(.dark) #themeBtn,
+html:not(.dark) #clearBtn {
+    color: #1a1a1a;
+}
+
+/* 页脚免责声明：深色白色半透明，浅色深灰半透明 */
+.footer-disclaimer {
+    color: rgba(255,255,255,0.6);
+}
 html:not(.dark) .footer-disclaimer {
-    color: rgba(0,0,0,0.25) !important;
+    color: rgba(26,26,26,0.5);
 }
 
 /* 建议卡片悬停效果 */
