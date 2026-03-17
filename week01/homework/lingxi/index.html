@@ -141,36 +141,36 @@
 
                 <!-- 胶囊形输入框 -->
                 <div class="flex-1 flex items-end gap-2 px-5 py-3 transition-all theme-input-pill"
-                     style="background:#1e293b;border-radius:24px;min-height:52px">
+                     style="background:#1e293b;border-radius:24px;min-height:45px">
 
-                    <!-- 左侧：文字输入区 -->
+                    <!-- 左侧：文字输入区（右侧预留空间给绝对定位按钮）-->
                     <textarea
                         id="messageInput"
                         class="flex-1 bg-transparent text-sm resize-none outline-none max-h-40"
-                        style="color:#f1f5f9;caret-color:#a78bfa;padding:0;margin:0;line-height:1.5;height:21px;overflow-y:hidden"
+                        style="color:#f1f5f9;caret-color:#a78bfa;padding:0;margin:0;line-height:1.5;height:25px;overflow-y:hidden"
                         placeholder="有问题尽管问我"
                         rows="1"
                     ></textarea>
 
-                    <!-- 右侧功能区：回形针 + 图片预览小圆圈 + 发送/停止 -->
-                    <div class="flex items-center gap-2 flex-shrink-0">
-
-                        <!-- 回形针图标 -->
+                    <!-- 右侧功能区：固定高度=单行文字高度，按钮视觉溢出但不撑高容器 -->
+                    <div class="flex items-center gap-1 flex-shrink-0 -mr-2" style="height:21px;overflow:visible">
+                        <!-- 回形针图标（竖向）-->
                         <label class="cursor-pointer transition-colors flex-shrink-0 upload-label" title="上传图片">
-                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
                             </svg>
                             <input type="file" id="imageUpload" accept="image/*" class="hidden">
                         </label>
 
-                        <!-- 图片预览小圆圈容器（上传后动态插入）-->
-                        <div id="imagePreview" class="flex items-center gap-1.5"></div>
+                        <!-- 图片预览小圆圈容器 -->
+                        <div id="imagePreview" class="flex items-center gap-1"></div>
 
-                        <!-- 发送按钮 -->
+                        <!-- 发送按钮：w-8 h-8，紧贴右边缘 -->
                         <button id="sendBtn" style="display:none"
-                                class="w-8 h-8 flex items-center justify-center rounded-full bg-blue-500 hover:bg-blue-400 text-white transition-colors flex-shrink-0">
-                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                                class="w-8 h-8 flex items-center justify-center rounded-full bg-blue-500 hover:bg-blue-400 text-white transition-all flex-shrink-0">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <line x1="12" y1="19" x2="12" y2="5"></line>
+                                <polyline points="5 12 12 5 19 12"></polyline>
                             </svg>
                         </button>
 
@@ -181,14 +181,14 @@
                                 <rect x="6" y="6" width="12" height="12" rx="2"/>
                             </svg>
                         </button>
-
                     </div>
+
                 </div>
 
                 <!-- D-01 锁定：主题切换按钮在输入框右侧 -->
                 <button id="themeBtn" title="切换主题"
                         class="w-12 flex items-center justify-center rounded-full flex-shrink-0 transition-colors"
-                        style="background:#1e293b;color:#64748b;height:52px">
+                        style="background:#1e293b;color:#64748b;height:45px">
                     <svg class="sun-icon w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="5"></circle>
                         <line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
@@ -204,10 +204,16 @@
                 <!-- 清除按钮 -->
                 <button id="clearBtn" title="清除对话"
                         class="w-12 flex items-center justify-center rounded-full flex-shrink-0 transition-colors"
-                        style="background:#1e293b;color:#64748b;height:52px">
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        style="background:#1e293b;color:#64748b;height:45px">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <!-- 桶盖 -->
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/>
+                        <!-- 桶身 -->
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        <!-- 内部三条线 -->
+                        <line x1="10" y1="11" x2="10" y2="17"/>
+                        <line x1="14" y1="11" x2="14" y2="17"/>
                     </svg>
                 </button>
             </div>
