@@ -127,6 +127,22 @@ html:not(.dark) #clearBtn:hover {
     animation: fadeIn 0.45s ease both;
 }
 
+/* ---- 思考中占位动画 ---- */
+.thinking-dots {
+    color: rgba(255,255,255,0.45);
+    font-size: 0.875rem;
+}
+
+.thinking-dots .dots {
+    display: inline-block;
+    animation: dotsBreath 1.4s ease-in-out infinite;
+}
+
+@keyframes dotsBreath {
+    0%, 100% { opacity: 0.2; }
+    50%       { opacity: 1; }
+}
+
 /* ---- AI 头像 ---- */
 .ai-avatar {
     width: 36px;

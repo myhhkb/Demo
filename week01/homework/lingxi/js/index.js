@@ -288,11 +288,16 @@ async function generateAIResponse(hasImages) {
     stopBtn.style.display = 'flex';
     resetScrollState(); // 新消息开始，重置滚动状态
 
-    const msgWrap   = addMessage('ai', '');
-    const bubble    = msgWrap.querySelector('.ai-content');
-    const avatar    = msgWrap._avatar;
+    const msgWrap = addMessage('ai', '');
+    const bubble  = msgWrap.querySelector('.ai-content');
+    const avatar  = msgWrap._avatar;
     if (avatar) avatar.classList.add('ai-avatar-spin');
-    let   fullContent = '';
+
+    // 显示「思考中...」占位
+    bubble.innerHTML = '<span class="thinking-dots">思考中<span class="dots">...</span></span>';
+
+    let fullContent = '';
+    let firstChunk  = true; // 标记是否收到第一块有效数据
 
     // 有图片时使用视觉模型
     const model = hasImages ? 'qwen-vl-plus' : 'qwen-plus';
@@ -341,6 +346,11 @@ async function generateAIResponse(hasImages) {
                         const data  = JSON.parse(trimmed.slice(5).trim());
                         const delta = data.choices?.[0]?.delta?.content;
                         if (delta) {
+                            // 收到第一块有效内容时清除「思考中...」
+                            if (firstChunk) {
+                                bubble.innerHTML = '';
+                                firstChunk = false;
+                            }
                             fullContent += delta;
                             bubble.innerHTML = marked.parse(fullContent);
                             bubble.querySelectorAll('pre code:not(.hljs)').forEach(addCodeBlockHeader);
@@ -357,6 +367,9 @@ async function generateAIResponse(hasImages) {
         if (error.name !== 'AbortError') {
             console.error('生成响应出错:', error);
             bubble.innerHTML = `<p class="text-red-400">错误：${error.message}</p>`;
+        } else {
+            // 用户手动停止：若仍在「思考中」状态则清除
+            if (firstChunk) bubble.innerHTML = '<p style="color:rgba(255,255,255,0.4)">已停止</p>';
         }
     } finally {
         isGenerating = false;
