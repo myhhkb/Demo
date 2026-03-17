@@ -69,6 +69,16 @@ html:not(.dark) .footer-disclaimer {
     color: rgba(148, 163, 184, 0.5);
 }
 
+/* 返回按钮悬停：深色模式白色，浅色模式深灰 */
+#backBtn:hover {
+    background: rgba(255,255,255,0.1);
+    color: #ffffff;
+}
+html:not(.dark) #backBtn:hover {
+    background: #e2e8f0;
+    color: #1a1a1a;
+}
+
 /* 底部按钮悬停高亮 */
 #themeBtn:hover, #clearBtn:hover {
     background: #2d3f55 !important;

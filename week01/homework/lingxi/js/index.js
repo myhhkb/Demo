@@ -16,7 +16,6 @@ const backBtn         = document.getElementById('backBtn');
 const imageUpload     = document.getElementById('imageUpload');
 const imagePreview    = document.getElementById('imagePreview');
 const themeBtn        = document.getElementById('themeBtn');   // 欢迎页主题按钮
-const themeBtn2       = document.getElementById('themeBtn2');  // 对话页主题按钮
 const suggestionCards = document.querySelectorAll('.suggestion-card');
 
 // ==================== 状态管理 ====================
@@ -96,17 +95,13 @@ function applyThemeStyles(isDark) {
 
 function syncThemeIcons() {
     const isDark = document.documentElement.classList.contains('dark');
-    [themeBtn, themeBtn2].forEach(btn => {
-        if (!btn) return;
-        btn.querySelector('.sun-icon').classList.toggle('hidden', isDark);
-        btn.querySelector('.moon-icon').classList.toggle('hidden', !isDark);
-    });
+    themeBtn.querySelector('.sun-icon').classList.toggle('hidden', isDark);
+    themeBtn.querySelector('.moon-icon').classList.toggle('hidden', !isDark);
 }
 
 // ==================== 事件监听 ====================
 function setupEventListeners() {
     themeBtn.addEventListener('click', toggleTheme);
-    themeBtn2.addEventListener('click', toggleTheme);
     sendBtn.addEventListener('click', sendMessage);
     stopBtn.addEventListener('click', stopGeneration);
     clearBtn.addEventListener('click', clearConversation);
