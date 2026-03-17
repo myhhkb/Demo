@@ -173,7 +173,7 @@ function sendMessage() {
         return;
     }
 
-    if (conversationHistory.length === 0) enterChat();
+    if (!welcomeSection.classList.contains('hidden')) enterChat();
 
     // 构建用户消息内容（支持多模态）
     let userContent;
