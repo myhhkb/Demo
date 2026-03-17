@@ -80,6 +80,15 @@ html:not(.dark) #clearBtn:hover {
     color: #334155 !important;
 }
 
+/* 回形针图标悬停效果 */
+.upload-label {
+    transition: color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+}
+.upload-label:hover {
+    opacity: 0.75;
+    transform: scale(1.1);
+}
+
 /* ---- textarea 滚动条优化 ---- */
 #messageInput {
     scrollbar-width: thin;
