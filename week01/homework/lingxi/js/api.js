@@ -46,7 +46,7 @@ async function generateAIResponse(hasImages) {
 
     let fullContent = '';
     let firstChunk  = true;
-    const model     = hasImages ? 'qwen-vl-plus' : 'qwen-plus';
+    const model = hasImages ? MODEL_VISION : MODEL_TEXT;
 
     try {
         currentAbortController = new AbortController();
