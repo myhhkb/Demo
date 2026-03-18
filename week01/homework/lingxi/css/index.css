@@ -122,6 +122,29 @@ html:not(.dark) [data-tooltip]::before {
     border-top-color: rgba(30, 41, 59, 0.95);
 }
 
+/* ---- 停止生成标记 ---- */
+.stop-mark {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: rgba(100,116,139,0.8);
+}
+.stop-mark span {
+    font-size: 12px;
+}
+.stop-mark-divider {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(100,116,139,0.2);
+}
+html.dark .stop-mark {
+    color: rgba(148,163,184,0.6);
+}
+html.dark .stop-mark-divider {
+    border-top-color: rgba(255,255,255,0.08);
+}
+
 /* ---- 返回按钮悬停 ---- */
 #backBtn:hover {
     background: rgba(255,255,255,0.1);

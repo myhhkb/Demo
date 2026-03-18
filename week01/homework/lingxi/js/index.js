@@ -355,15 +355,23 @@ async function generateAIResponse(hasImages) {
 
     } catch (error) {
         if (error.name === 'AbortError') {
-            // 用户手动停止
-            if (firstChunk) bubble.innerHTML = '<p style="color:rgba(255,255,255,0.4)">已停止</p>';
-            else {
-                // 已有部分内容时在末尾追加停止标记
-                const stopMark = document.createElement('p');
-                stopMark.style.cssText = 'color:rgba(255,255,255,0.35);font-size:12px;margin-top:6px';
-                stopMark.textContent = '— 已停止生成';
+            // 用户手动停止：气泡内提示 + Toast 通知
+            if (firstChunk) {
+                bubble.innerHTML = `
+                    <div class="stop-mark">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                        <span>已停止生成</span>
+                    </div>`;
+            } else {
+                // 已有部分内容：末尾追加停止标记
+                const stopMark = document.createElement('div');
+                stopMark.className = 'stop-mark stop-mark-divider';
+                stopMark.innerHTML = `
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                    <span>已停止生成</span>`;
                 bubble.appendChild(stopMark);
             }
+            showToast('已停止生成', 'warning');
         } else {
             // 网络 / API 错误，区分类型给出友好提示
             let friendlyMsg = '';
