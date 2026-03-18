@@ -98,7 +98,7 @@ html:not(.dark) .footer-disclaimer {
 [data-tooltip]::before {
     content: '';
     position: absolute;
-    bottom: calc(100% + 3px);
+    bottom: 100%;
     left: 50%;
     transform: translateX(-50%);
     border: 5px solid transparent;
