@@ -95,8 +95,18 @@ function sendMessage() {
     if (isGenerating) return;
 
     if (!getApiKey()) {
-        alert('API Key 未设置，请检查 js/config.js 文件');
-        return;
+        const key = prompt(
+            '未检测到 API Key，请输入阿里云百炼 API Key\n' +
+            '（获取地址：https://bailian.console.aliyun.com）\n\n' +
+            '输入后将仅保存在本地浏览器，不会上传到任何服务器。'
+        );
+        if (key && key.trim()) {
+            localStorage.setItem(API_KEY_STORAGE, key.trim());
+            showToast('API Key 设置成功', 'success');
+        } else {
+            showToast('未设置 API Key，请刷新页面或重新发送消息以重新输入', 'warning');
+            return;
+        }
     }
 
     if (!welcomeSection.classList.contains('hidden')) enterChat();
