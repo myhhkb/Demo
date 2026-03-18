@@ -470,6 +470,9 @@ html:not(.dark) .ai-content pre {
     background: #1a1a2e;
     border-color: rgba(0,0,0,0.12);
 }
+html:not(.dark) .ai-content pre code {
+    color: #e2e8f0;
+}
 
 /* ---- 代码块头部 ---- */
 .code-block-wrapper { margin: 0 0 1.2em; }
