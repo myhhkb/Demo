@@ -354,12 +354,49 @@ async function generateAIResponse(hasImages) {
         conversationHistory.push({ role: 'assistant', content: fullContent });
 
     } catch (error) {
-        if (error.name !== 'AbortError') {
-            console.error('生成响应出错:', error);
-            bubble.innerHTML = `<p class="text-red-400">错误：${error.message}</p>`;
-        } else {
-            // 用户手动停止：若仍在「思考中」状态则清除
+        if (error.name === 'AbortError') {
+            // 用户手动停止
             if (firstChunk) bubble.innerHTML = '<p style="color:rgba(255,255,255,0.4)">已停止</p>';
+            else {
+                // 已有部分内容时在末尾追加停止标记
+                const stopMark = document.createElement('p');
+                stopMark.style.cssText = 'color:rgba(255,255,255,0.35);font-size:12px;margin-top:6px';
+                stopMark.textContent = '— 已停止生成';
+                bubble.appendChild(stopMark);
+            }
+        } else {
+            // 网络 / API 错误，区分类型给出友好提示
+            let friendlyMsg = '';
+            let detailMsg   = error.message || '未知错误';
+
+            if (!navigator.onLine || error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                friendlyMsg = '网络连接失败，请检查网络后重试';
+            } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+                friendlyMsg = 'API Key 无效或已过期，请重新配置';
+            } else if (error.message.includes('429') || error.message.includes('rate limit')) {
+                friendlyMsg = '请求过于频繁，请稍后再试';
+            } else if (error.message.includes('500') || error.message.includes('502') || error.message.includes('503')) {
+                friendlyMsg = '服务器暂时不可用，请稍后重试';
+            } else if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+                friendlyMsg = '请求超时，请检查网络后重试';
+            } else {
+                friendlyMsg = '请求失败，请稍后重试';
+            }
+
+            console.error('生成响应出错:', error);
+
+            // 气泡内错误展示（带重试按钮）
+            bubble.innerHTML = `
+                <div style="display:flex;flex-direction:column;gap:8px">
+                    <div style="display:flex;align-items:center;gap:8px;color:#f87171">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <span style="font-size:13px;font-weight:500">${friendlyMsg}</span>
+                    </div>
+                    <span style="font-size:11px;color:rgba(255,255,255,0.3)">${detailMsg}</span>
+                </div>`;
+
+            // 同时弹出 Toast 通知
+            showToast(friendlyMsg, 'error');
         }
     } finally {
         isGenerating = false;
@@ -372,6 +409,35 @@ async function generateAIResponse(hasImages) {
 
 function stopGeneration() {
     currentAbortController?.abort();
+}
+
+// ==================== Toast 通知 ====================
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    const colors = {
+        error:   'background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.35);color:#fca5a5',
+        warning: 'background:rgba(251,146,60,0.15);border-color:rgba(251,146,60,0.35);color:#fdba74',
+        success: 'background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.35);color:#86efac',
+        info:    'background:rgba(96,165,250,0.15);border-color:rgba(96,165,250,0.35);color:#93c5fd',
+    };
+    const icons = {
+        error:   '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+        warning: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+        success: '<polyline points="20 6 9 17 4 12"/>',
+        info:    '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
+    };
+    toast.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);padding:10px 16px;border-radius:12px;border:1px solid;font-size:13px;display:flex;align-items:center;gap:8px;z-index:9999;opacity:0;transition:opacity 0.25s ease,transform 0.25s ease;white-space:nowrap;backdrop-filter:blur(8px);box-shadow:0 4px 16px rgba(0,0,0,0.3);${colors[type] || colors.info}`;
+    toast.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">${icons[type] || icons.info}</svg><span>${message}</span>`;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(8px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
 }
 
 // ==================== 图片灯箱（点击放大）====================
