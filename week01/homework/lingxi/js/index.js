@@ -540,7 +540,11 @@ function handleImageUpload(e) {
     toAdd.forEach(file => {
         const reader = new FileReader();
         reader.onload = (ev) => {
-            uploadedImages.push({ name: file.name, data: ev.target.result });
+            uploadedImages.push({
+                id: `img_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
+                name: file.name,
+                data: ev.target.result
+            });
             renderImagePreview();
         };
         reader.readAsDataURL(file);
@@ -550,17 +554,21 @@ function handleImageUpload(e) {
 
 function renderImagePreview() {
     imagePreview.innerHTML = '';
-    uploadedImages.forEach((img, idx) => {
+    uploadedImages.forEach((img) => {
         const thumb = document.createElement('div');
         thumb.className = 'img-thumb';
+        thumb.dataset.id = img.id;
         thumb.innerHTML = `
             <img src="${img.data}" alt="${img.name}">
             <button class="img-remove" title="删除">×</button>
         `;
         thumb.querySelector('.img-remove').addEventListener('click', (e) => {
             e.stopPropagation();
-            uploadedImages.splice(idx, 1);
+            // 用唯一 id 定位删除，避免索引闭包 bug
+            const targetId = thumb.dataset.id;
+            uploadedImages = uploadedImages.filter(i => i.id !== targetId);
             renderImagePreview();
+            updateSendBtnVisibility();
         });
         imagePreview.appendChild(thumb);
     });
