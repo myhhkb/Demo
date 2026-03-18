@@ -3,6 +3,44 @@ const API_KEY_STORAGE = 'LINGXI_API_KEY';
 const THEME_STORAGE = 'LINGXI_THEME';
 const ALIYUN_API_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions';
 
+// ==================== XSS 防护 ====================
+// 使用 marked 的 hooks 机制，渲染后通过 DOMParser 清理危险元素和属性
+const DANGEROUS_TAGS = new Set(['script','iframe','object','embed','form','input','button','meta','link','style','base','applet']);
+const DANGEROUS_ATTRS = /^(on\w+|javascript:|data:text\/html)/i;
+
+function sanitizeHTML(html) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    // 递归移除危险标签和危险属性
+    function clean(node) {
+        const children = Array.from(node.childNodes);
+        for (const child of children) {
+            if (child.nodeType === Node.ELEMENT_NODE) {
+                if (DANGEROUS_TAGS.has(child.tagName.toLowerCase())) {
+                    child.remove();
+                    continue;
+                }
+                // 移除危险属性
+                Array.from(child.attributes).forEach(attr => {
+                    if (DANGEROUS_ATTRS.test(attr.name) || DANGEROUS_ATTRS.test(attr.value)) {
+                        child.removeAttribute(attr.name);
+                    }
+                });
+                clean(child);
+            }
+        }
+    }
+    clean(doc.body);
+    return doc.body.innerHTML;
+}
+
+// 配置 marked：禁用 HTML 直通，防止原始 HTML 注入
+marked.setOptions({
+    breaks: true,
+    gfm: true,
+    html: false   // 禁止 Markdown 中的原始 HTML 直接输出
+});
+
 // ==================== DOM 元素 ====================
 const welcomeSection  = document.getElementById('welcomeSection');
 const chatSection     = document.getElementById('chatSection');
@@ -342,7 +380,7 @@ async function generateAIResponse(hasImages) {
                                 firstChunk = false;
                             }
                             fullContent += delta;
-                            bubble.innerHTML = marked.parse(fullContent);
+                            bubble.innerHTML = sanitizeHTML(marked.parse(fullContent));
                             bubble.querySelectorAll('pre code:not(.hljs)').forEach(addCodeBlockHeader);
                             scrollToBottom();
                         }
