@@ -130,7 +130,6 @@ async function generateAIResponse(hasImages) {
                     <span>已停止生成</span>`;
                 bubble.appendChild(stopMark);
             }
-            showToast('已停止生成', 'warning');
         } else {
             let friendlyMsg = '请求失败，请稍后重试';
             const msg = error.message || '';

@@ -140,7 +140,7 @@ function showToast(message, type = 'info') {
         toast.style.opacity = '0';
         toast.style.transform = 'translateX(-50%) translateY(8px)';
         setTimeout(() => toast.remove(), 300);
-    }, 4000);
+    }, 1000);
 }
 
 // ---------- 图片预览 ----------
