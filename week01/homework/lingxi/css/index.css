@@ -562,3 +562,75 @@ html:not(.dark) .user-img-placeholder {
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 .dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+/* ======================================== */
+/* ---- Markdown 表格样式 ---- */
+/* ======================================== */
+.ai-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(148,163,184,0.2);
+}
+.ai-content thead tr {
+    background: rgba(99,102,241,0.12);
+}
+.ai-content thead th {
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    color: #a78bfa;
+    border-bottom: 1px solid rgba(148,163,184,0.2);
+    white-space: nowrap;
+}
+.ai-content tbody tr {
+    transition: background 0.15s ease;
+}
+/* 斑马纹 */
+.ai-content tbody tr:nth-child(odd) {
+    background: rgba(255,255,255,0.02);
+}
+.ai-content tbody tr:nth-child(even) {
+    background: rgba(255,255,255,0.05);
+}
+.ai-content tbody tr:hover {
+    background: rgba(167,139,250,0.08);
+}
+.ai-content tbody td {
+    padding: 9px 14px;
+    border-bottom: 1px solid rgba(148,163,184,0.1);
+    color: #cbd5e1;
+    vertical-align: top;
+    line-height: 1.5;
+}
+.ai-content tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* 浅色模式表格 */
+html:not(.dark) .ai-content table {
+    border-color: rgba(100,116,139,0.2);
+}
+html:not(.dark) .ai-content thead tr {
+    background: rgba(99,102,241,0.08);
+}
+html:not(.dark) .ai-content thead th {
+    color: #7c3aed;
+    border-bottom-color: rgba(100,116,139,0.2);
+}
+html:not(.dark) .ai-content tbody tr:nth-child(odd) {
+    background: #ffffff;
+}
+html:not(.dark) .ai-content tbody tr:nth-child(even) {
+    background: rgba(99,102,241,0.03);
+}
+html:not(.dark) .ai-content tbody tr:hover {
+    background: rgba(99,102,241,0.06);
+}
+html:not(.dark) .ai-content tbody td {
+    color: #334155;
+    border-bottom-color: rgba(100,116,139,0.1);
+}
