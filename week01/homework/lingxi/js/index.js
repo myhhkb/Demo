@@ -170,26 +170,20 @@ function sendMessage() {
 
     if (!welcomeSection.classList.contains('hidden')) enterChat();
 
-    // 构建用户消息内容（支持多模态）
+    // 构建用户消息内容（统一使用数组格式，符合 VL 模型规范）
     let userContent;
     if (hasImages) {
-        // 使用 content 数组格式（视觉模型格式）
-        userContent = [];
-        // 先放图片
-        uploadedImages.forEach(img => {
-            userContent.push({
+        // 多模态：图片 + 文字
+        userContent = [
+            ...uploadedImages.map(img => ({
                 type: 'image_url',
                 image_url: { url: img.data }
-            });
-        });
-        // 再放文字
-        if (message) {
-            userContent.push({ type: 'text', text: message });
-        } else {
-            userContent.push({ type: 'text', text: '请描述这张图片的内容。' });
-        }
+            })),
+            { type: 'text', text: message || '请描述这张图片的内容。' }
+        ];
     } else {
-        userContent = message;
+        // 纯文字：统一使用数组格式，与 VL 模型规范保持一致
+        userContent = [{ type: 'text', text: message }];
     }
 
     // 显示用户消息气泡（文字 + 图片缩略图）
