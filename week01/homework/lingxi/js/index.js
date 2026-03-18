@@ -523,9 +523,21 @@ function addCodeBlockHeader(codeBlock) {
 }
 
 // ==================== 图片上传 ====================
+const MAX_IMAGES = 5; // 最多同时上传 5 张
+
 function handleImageUpload(e) {
-    Array.from(e.target.files).forEach(file => {
-        if (!file.type.startsWith('image/')) return;
+    const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+    const remaining = MAX_IMAGES - uploadedImages.length;
+    if (remaining <= 0) {
+        showToast(`最多上传 ${MAX_IMAGES} 张图片`, 'warning');
+        imageUpload.value = '';
+        return;
+    }
+    const toAdd = files.slice(0, remaining);
+    if (files.length > remaining) {
+        showToast(`已达上限，仅添加前 ${remaining} 张图片`, 'warning');
+    }
+    toAdd.forEach(file => {
         const reader = new FileReader();
         reader.onload = (ev) => {
             uploadedImages.push({ name: file.name, data: ev.target.result });
