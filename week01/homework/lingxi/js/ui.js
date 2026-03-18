@@ -179,6 +179,8 @@ function autoResizeTextarea() {
     const newHeight = Math.min(Math.max(messageInput.scrollHeight, BASE_HEIGHT), BASE_HEIGHT + 120);
     messageInput.style.height = newHeight + 'px';
     messageInput.style.overflowY = newHeight >= BASE_HEIGHT + 120 ? 'auto' : 'hidden';
+    // 输入框高度变化后，重新滚动到底部，防止最后一条消息被遮挡
+    scrollToBottom();
 }
 
 // ---------- 滚动控制 ----------
