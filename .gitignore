@@ -6,7 +6,6 @@ x64
 .vs
 *.exe
 /test
-# ==================== API Key 配置（绝对不能提交）====================
 
 week01/homework/lingxi/ISSUES.md
 week01/homework/lingxi/README.md
