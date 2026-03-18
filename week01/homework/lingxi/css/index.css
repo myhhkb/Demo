@@ -122,6 +122,14 @@ html:not(.dark) [data-tooltip]::before {
     border-top-color: rgba(30, 41, 59, 0.95);
 }
 
+/* ---- Logo 混合模式（深色 screen 去白底，浅色 multiply 去白底）---- */
+.logo-img {
+    mix-blend-mode: screen;
+}
+html:not(.dark) .logo-img {
+    mix-blend-mode: multiply;
+}
+
 /* ---- 停止生成标记 ---- */
 .stop-mark {
     display: flex;
