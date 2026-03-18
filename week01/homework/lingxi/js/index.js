@@ -27,6 +27,7 @@ let userScrolledUp         = false;
 
 // ==================== 初始化 ====================
 document.addEventListener('DOMContentLoaded', () => {
+    initializeLocalConfig(); // config.js：API Key 初始化
     initTheme();
     setupEventListeners();
 });
@@ -112,9 +113,16 @@ function sendMessage() {
     if (!welcomeSection.classList.contains('hidden')) enterChat();
 
     // 构建用户消息内容（统一数组格式，符合 VL 模型规范）
+    // base64 data URL 格式：data:image/jpeg;base64,xxx
+    const imageItems = uploadedImages.map(img => {
+        // 确保 data URL 格式正确（FileReader.readAsDataURL 已保证）
+        const url = img.data.startsWith('data:image') ? img.data : `data:image/jpeg;base64,${img.data}`;
+        return { type: 'image_url', image_url: { url } };
+    });
+
     const userContent = hasImages
         ? [
-            ...uploadedImages.map(img => ({ type: 'image_url', image_url: { url: img.data } })),
+            ...imageItems,
             { type: 'text', text: message || '请描述这张图片的内容。' }
           ]
         : [{ type: 'text', text: message }];

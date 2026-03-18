@@ -16,7 +16,7 @@ function addMessage(role, content, images) {
         avatar.appendChild(avatarImg);
 
         const bubble = document.createElement('div');
-        bubble.className = 'ai-content max-w-[75%] bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl rounded-tl-sm px-4 py-3 text-sm border border-slate-200 dark:border-slate-700';
+        bubble.className = 'ai-content max-w-[80%] text-sm';
         bubble.innerHTML = content;
 
         wrap.appendChild(avatar);
@@ -69,6 +69,14 @@ function addMessage(role, content, images) {
 // ---------- Markdown 渲染 + 代码块 ----------
 function renderMarkdown(bubble, fullContent) {
     bubble.innerHTML = sanitizeHTML(marked.parse(fullContent));
+    // 表格外层加可横向滚动的 wrapper
+    bubble.querySelectorAll('table:not(.wrapped)').forEach(table => {
+        table.classList.add('wrapped');
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-wrapper';
+        table.parentNode.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+    });
     bubble.querySelectorAll('pre code:not(.hljs)').forEach(addCodeBlockHeader);
 }
 

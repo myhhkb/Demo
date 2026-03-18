@@ -71,6 +71,18 @@ async function generateAIResponse(hasImages) {
         const reader  = response.body.getReader();
         const decoder = new TextDecoder();
         let   buffer  = '';
+        let   renderTimer = null;
+
+        // 节流渲染：流式阶段最多每 80ms 完整解析一次 Markdown
+        // 避免每个 delta 都重建 DOM，减少长回复时的性能损耗
+        function scheduleRender() {
+            if (renderTimer) return;
+            renderTimer = setTimeout(() => {
+                renderTimer = null;
+                renderMarkdown(bubble, fullContent);
+                scrollToBottom();
+            }, 80);
+        }
 
         while (true) {
             const { done, value } = await reader.read();
@@ -90,8 +102,7 @@ async function generateAIResponse(hasImages) {
                         if (delta) {
                             if (firstChunk) { bubble.innerHTML = ''; firstChunk = false; }
                             fullContent += delta;
-                            renderMarkdown(bubble, fullContent);
-                            scrollToBottom();
+                            scheduleRender();
                         }
                     } catch (_) { /* 忽略不完整 JSON */ }
                 }
@@ -99,6 +110,9 @@ async function generateAIResponse(hasImages) {
         }
 
         conversationHistory.push({ role: 'assistant', content: fullContent });
+        // 流式结束后清除节流计时器，强制完整渲染最终内容
+        if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
+        if (fullContent) { renderMarkdown(bubble, fullContent); scrollToBottom(); }
 
     } catch (error) {
         if (error.name === 'AbortError') {

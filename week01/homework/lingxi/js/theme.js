@@ -64,6 +64,8 @@ function applyThemeStyles(isDark) {
 
 function syncThemeIcons() {
     const isDark = document.documentElement.classList.contains('dark');
-    themeBtn.querySelector('.sun-icon').classList.toggle('hidden', isDark);
-    themeBtn.querySelector('.moon-icon').classList.toggle('hidden', !isDark);
+    // 深色模式：显示太阳（点击切回浅色）
+    // 浅色模式：显示月亮（点击切换深色）
+    themeBtn.querySelector('.sun-icon').classList.toggle('hidden', !isDark);
+    themeBtn.querySelector('.moon-icon').classList.toggle('hidden', isDark);
 }
