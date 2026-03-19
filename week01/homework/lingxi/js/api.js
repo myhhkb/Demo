@@ -169,7 +169,8 @@ function stopGeneration() {
 }
 
 // ---------- 图片上传 ----------
-const MAX_IMAGES = 5;
+const MAX_IMAGES    = 5;    // 最多同时上传张数
+const MAX_IMG_SIZE  = 4 * 1024 * 1024; // 单张最大 4MB（base64 膨胀约 1.33x，实际请求约 5.3MB）
 
 function handleImageUpload(e) {
     const files     = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
@@ -181,6 +182,11 @@ function handleImageUpload(e) {
     }
     if (files.length > remaining) showToast(`已达上限，仅添加前 ${remaining} 张图片`, 'warning');
     files.slice(0, remaining).forEach(file => {
+        // 大小校验：超过 4MB 拒绝上传
+        if (file.size > MAX_IMG_SIZE) {
+            showToast(`「${file.name}」超过 4MB 限制，已跳过`, 'warning');
+            return;
+        }
         const reader = new FileReader();
         reader.onload = (ev) => {
             uploadedImages.push({

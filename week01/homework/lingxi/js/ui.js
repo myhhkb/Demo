@@ -13,6 +13,15 @@ function addMessage(role, content, images) {
         avatarImg.src = './assets/linxi.png';
         avatarImg.alt = '灵犀';
         avatarImg.className = 'ai-avatar-img';
+        avatarImg.onerror = () => {
+            // 头像加载失败时显示文字占位
+            avatarImg.style.display = 'none';
+            const fallback = document.createElement('div');
+            fallback.className = 'ai-avatar-img';
+            fallback.style.cssText = 'display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#a78bfa;background:rgba(167,139,250,0.15);border-radius:50%;';
+            fallback.textContent = '灵';
+            avatar.appendChild(fallback);
+        };
         avatar.appendChild(avatarImg);
 
         const bubble = document.createElement('div');
