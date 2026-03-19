@@ -65,7 +65,9 @@ async function generateAIResponse(hasImages) {
             const errText = await response.text();
             let errMsg = `HTTP ${response.status}`;
             try { errMsg = JSON.parse(errText).error?.message || errMsg; } catch (_) {}
-            throw new Error(errMsg);
+            const err = new Error(errMsg);
+            err.status = response.status;
+            throw err;
         }
 
         const reader  = response.body.getReader();
@@ -135,7 +137,7 @@ async function generateAIResponse(hasImages) {
             const msg = error.message || '';
             if (!navigator.onLine || msg.includes('Failed to fetch') || msg.includes('NetworkError'))
                 friendlyMsg = '网络连接失败，请检查网络后重试';
-            else if (msg.includes('401') || msg.includes('Unauthorized')) {
+            else if (error.status === 401 || msg.includes('401') || msg.includes('Unauthorized') || msg.toLowerCase().includes('invalid') && msg.toLowerCase().includes('key')) {
                 // 清除无效 Key，引导用户重新输入
                 localStorage.removeItem(API_KEY_STORAGE);
                 const newKey = prompt(
@@ -149,9 +151,9 @@ async function generateAIResponse(hasImages) {
                     showToast('未设置 API Key，请重新发送消息以重新输入', 'warning');
                 }
                 friendlyMsg = 'API Key 无效或已过期，已清除旧 Key，请重新发送消息';
-            } else if (msg.includes('429') || msg.includes('rate limit'))
+            } else if (error.status === 429 || msg.includes('429') || msg.includes('rate limit'))
                 friendlyMsg = '请求过于频繁，请稍后再试';
-            else if (msg.includes('500') || msg.includes('502') || msg.includes('503'))
+            else if (error.status >= 500 || msg.includes('500') || msg.includes('502') || msg.includes('503'))
                 friendlyMsg = '服务器暂时不可用，请稍后重试';
             else if (msg.includes('timeout') || msg.includes('Timeout'))
                 friendlyMsg = '请求超时，请检查网络后重试';
