@@ -19,7 +19,7 @@ function toggleTheme() {
 function applyThemeStyles(isDark) {
     const body       = document.body;
     const inputPill  = document.querySelector('.theme-input-pill');
-    const btns       = document.querySelectorAll('#themeBtn, #clearBtn');
+    const btns       = document.querySelectorAll('#themeBtn, #clearBtn, #apiKeyBtn');
     const inputArea  = document.querySelector('.theme-input-area');
     const hdr        = document.getElementById('chatHeader');
     const msgInput   = document.getElementById('messageInput');

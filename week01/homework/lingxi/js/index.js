@@ -18,6 +18,7 @@ const backBtn         = document.getElementById('backBtn');
 const imageUpload     = document.getElementById('imageUpload');
 const imagePreview    = document.getElementById('imagePreview');
 const themeBtn        = document.getElementById('themeBtn');
+const apiKeyBtn       = document.getElementById('apiKeyBtn');
 const suggestionCards = document.querySelectorAll('.suggestion-card');
 
 // ==================== 状态管理 ====================
@@ -36,6 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==================== 事件监听 ====================
 function setupEventListeners() {
     themeBtn.addEventListener('click', toggleTheme);
+    apiKeyBtn.addEventListener('click', changeApiKey);
     sendBtn.addEventListener('click', sendMessage);
     stopBtn.addEventListener('click', stopGeneration);
     clearBtn.addEventListener('click', clearConversation);
@@ -151,4 +153,20 @@ function clearConversation() {
     messageInput.value     = '';
     goHome();
     updateSendBtnVisibility();
+}
+
+// ==================== 更换 API Key ====================
+function changeApiKey() {
+    const current = getApiKey();
+    const newKey = prompt(
+        (current ? '当前已设置 API Key，如需更换请输入新的 Key：' : '请输入阿里云百炼 API Key：') + '\n' +
+        '（获取地址：https://bailian.console.aliyun.com）'
+    );
+    if (newKey === null) return; // 用户点了取消
+    if (newKey.trim()) {
+        localStorage.setItem(API_KEY_STORAGE, newKey.trim());
+        showToast('API Key 已更新', 'success');
+    } else {
+        showToast('输入为空，API Key 未修改', 'warning');
+    }
 }
