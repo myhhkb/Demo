@@ -86,7 +86,11 @@ function renderMarkdown(bubble, fullContent) {
         table.parentNode.insertBefore(wrapper, table);
         wrapper.appendChild(table);
     });
-    bubble.querySelectorAll('pre code:not(.hljs)').forEach(addCodeBlockHeader);
+    // 只处理尚未高亮的代码块，避免流式阶段重复高亮
+    bubble.querySelectorAll('pre code:not(.hljs):not(.highlight-pending)').forEach(codeBlock => {
+        codeBlock.classList.add('highlight-pending');
+        addCodeBlockHeader(codeBlock);
+    });
 }
 
 function addCodeBlockHeader(codeBlock) {
