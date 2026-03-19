@@ -137,7 +137,7 @@ async function generateAIResponse(hasImages) {
             const msg = error.message || '';
             if (!navigator.onLine || msg.includes('Failed to fetch') || msg.includes('NetworkError'))
                 friendlyMsg = '网络连接失败，请检查网络后重试';
-            else if (error.status === 401 || msg.includes('401') || msg.includes('Unauthorized') || msg.toLowerCase().includes('invalid') && msg.toLowerCase().includes('key')) {
+            else if (error.status === 401 || msg.includes('401') || msg.includes('Unauthorized') || (msg.toLowerCase().includes('invalid') && msg.toLowerCase().includes('key'))) {
                 // 清除无效 Key，引导用户重新输入
                 localStorage.removeItem(API_KEY_STORAGE);
                 const newKey = prompt(

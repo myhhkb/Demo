@@ -321,6 +321,22 @@ html:not(.dark) .thinking-dots {
     display: block;
 }
 
+/* 头像加载失败时的文字占位 */
+.ai-avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #a78bfa;
+    background: rgba(167,139,250,0.15);
+    object-fit: unset;
+}
+html:not(.dark) .ai-avatar-fallback {
+    color: #7c3aed;
+    background: rgba(124,58,237,0.1);
+}
+
 /* 回答中：旋转 + 发光脉冲 */
 .ai-avatar-spin .ai-avatar-img {
     animation: avatarRotate 2s linear infinite, avatarGlow 1.5s ease-in-out infinite;
