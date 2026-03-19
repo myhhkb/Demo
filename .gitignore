@@ -8,8 +8,7 @@ x64
 /test
 
 week01/homework/lingxi/ISSUES.md
-week01/homework/lingxi/README.md
-week01/homework/lingxi/js/config.js
+
 
 # !是不忽略的意思
 !*.sln  
@@ -27,4 +26,3 @@ yarn-error.log*
 .pnp
 .pnp.js
 .DS_Store
-
