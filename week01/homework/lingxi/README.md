@@ -28,12 +28,13 @@ lingxi/
 ├── css/
 │   └── index.css       # 全局样式
 └── js/
-    ├── config.js       # 模型常量 + API Key 初始化
-    ├── theme.js        # 主题管理模块
-    ├── ui.js           # UI 渲染模块
-    ├── api.js          # API 通信模块
-    └── index.js        # 核心调度层
+    ├── theme.js        # 主题管理（初始化、切换、图标同步）
+    ├── ui.js           # UI 渲染（消息气泡、Markdown、代码块、Toast）
+    ├── api.js          # API 通信（流式 SSE、错误处理、图片上传）
+    └── index.js        # 核心调度（常量、DOM、状态、事件、消息发送）
 ```
+
+> 加载顺序：`theme.js` → `ui.js` → `api.js` → `index.js`，所有模块共享同一全局作用域。
 
 ---
 
@@ -43,34 +44,36 @@ lingxi/
 
 - 四色宽域静态渐变标题「嗨，我是灵犀」（粉→紫→蓝→绿）
 - 4 张快捷建议卡片，2×4 网格排列，点击直接发送问题
-- 底部胶囊形输入框，内置回形针、图片预览圆圈、发送/停止按钮
-- 右侧外置主题切换按钮 + 清除对话按钮
-- 页脚免责声明
+- 底部胶囊形输入框，内置回形针图标、图片预览圆圈、发送/停止按钮
+- 右侧外置：主题切换、清除对话、更换 API Key 三个圆形按钮
+- 页脚免责声明「内容由 AI 大模型生成，请仔细甄别」
 
 ### 对话页
 
-- 顶部导航栏：左侧返回按钮 + 右侧 Logo
-- AI 消息靠左，用户消息靠右，与输入框对齐
-- AI 头像回答时旋转 + 光晕动画，「思考中...」占位气泡
-- 流式输出打字机效果，Markdown 实时渲染（节流 80ms）
-- 代码块：语法高亮 + 语言标识 + 一键复制
+- 顶部导航栏：左侧「← 返回主页」+ 右侧 Logo
+- AI 消息靠左，用户消息靠右，与输入框边缘对齐
+- AI 头像回答时旋转 + 光晕动画；图片加载失败时显示「灵」字占位
+- 「思考中...」三点呼吸动画占位气泡
+- 流式输出打字机效果，Markdown 实时渲染（80ms 节流）
+- 代码块：语法高亮（highlight.js）+ 语言标识 + 一键复制
 - 用户消息图片气泡：shimmer 加载 → 淡入，点击灯箱全屏预览
-- 分类错误提示（网络/API Key/频率/服务器）
+- 分类错误气泡（网络失败 / API Key 无效 / 频率限制 / 服务器错误）
+- API Key 无效时自动清除旧 Key 并弹窗引导重新输入
 
 ### 输入区
 
-- 多行文本自动扩展（最大 120px）
+- 多行文本自动扩展（最大 120px），超出显示内部滚动条
 - Enter 发送，Shift+Enter 换行
-- 最多同时上传 5 张图片
+- 最多同时上传 5 张图片，单张限 4MB，超限跳过并提示
 - 自定义 Tooltip（毛玻璃背景）覆盖所有可交互按钮
 
 ### 安全与体验
 
-- XSS 防护：`sanitizeHTML()` 递归清理危险标签和属性
-- marked 配置 `html: false` 禁止 HTML 直通
-- AI 输出时用户可自由上滑查看历史，回底部自动恢复跟随
+- XSS 防护：`marked` 配置 `html: false` + `sanitizeHTML()` 递归清理危险标签和属性
+- AI 输出时用户可自由上滑查看历史，回底部附近自动恢复跟随
 - 返回主页不清除对话历史，继续上下文
 - 主题切换状态 localStorage 持久化
+- 图片灯箱：全屏遮罩 + `backdrop-filter: blur` + 点击关闭
 
 ### 多模态 AI
 
@@ -81,39 +84,31 @@ lingxi/
 
 ## 核心技术实现
 
-### 1. 模块化架构
+### 1. API Key 管理
 
-代码按职责拆分为 5 个模块，加载顺序：`config.js` → `theme.js` → `ui.js` → `api.js` → `index.js`
+API Key 不写入源码，仅存于浏览器 localStorage：
 
-| 模块 | 职责 |
-|------|------|
-| `config.js` | 模型常量、API Key 初始化（prompt 弹窗存入 localStorage）|
-| `theme.js` | 主题初始化、切换、图标同步（纯 CSS 变量驱动）|
-| `ui.js` | 消息气泡、Markdown 渲染、代码块、灯箱、Toast、图片预览 |
-| `api.js` | XSS 防护、流式 SSE 响应、错误处理、图片上传 |
-| `index.js` | DOM 引用、状态、事件监听、页面切换、消息发送 |
+- **首次使用**：发送消息时检测无 Key，弹出 `prompt` 引导输入
+- **主动更换**：点击输入框右侧钥匙图标按钮，随时更换
+- **Key 无效**：收到 401 响应时，自动清除旧 Key 并弹窗重新引导输入
 
-### 2. 主题系统（CSS 变量驱动）
+```javascript
+// HTTP 状态码优先判断，避免错误消息字符串匹配失效
+const err = new Error(errMsg);
+err.status = response.status;
+throw err;
 
-```css
-:root {
-    --bg-base: #0f1423;
-    --bg-card: #1e293b;
-    --text-primary: #f1f5f9;
-}
-html:not(.dark) {
-    --bg-base: #f8fafc;
-    --bg-card: #ffffff;
-    --text-primary: #1a1a1a;
+// 错误处理
+if (error.status === 401) {
+    localStorage.removeItem(API_KEY_STORAGE);
+    // 弹窗引导重新输入...
 }
 ```
 
-`theme.js` 只切换 `html.dark` 类，所有样式由 CSS 变量自动响应，消除 JS inline style 双轨驱动。
-
-### 3. 流式响应 + 节流渲染
+### 2. 流式响应 + 节流渲染
 
 ```javascript
-// 节流：80ms 内多个 delta 合并为一次渲染
+// 80ms 内多个 delta 合并为一次 DOM 更新
 function scheduleRender() {
     if (renderTimer) return;
     renderTimer = setTimeout(() => {
@@ -124,10 +119,10 @@ function scheduleRender() {
 }
 // 流式结束后强制完整渲染
 if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
-if (fullContent) { renderMarkdown(bubble, fullContent); }
+renderMarkdown(bubble, fullContent);
 ```
 
-### 4. 多模态消息构建
+### 3. 多模态消息构建
 
 | 场景 | 模型 | 理由 |
 |------|------|------|
@@ -140,20 +135,44 @@ const userContent = hasImages
     : [{ type: 'text', text: message }];
 ```
 
-### 5. API Key 安全
-
-API Key 不写入源码，仅存于浏览器 localStorage。首次访问通过 `prompt()` 引导输入，`config.js` 已从 `.gitignore` 中移除（文件中无任何敏感信息）。
-
-### 6. XSS 防护
+### 4. XSS 防护
 
 ```javascript
-const DANGEROUS_TAGS = new Set(['script','iframe','object','embed',...]);
-const DANGEROUS_ATTRS = /^(on\w+|javascript:|data:text\/html)/i;
+// marked 禁止 HTML 直通
+marked.setOptions({ html: false });
 
+// sanitizeHTML 递归清理危险标签和属性
+const DANGEROUS_TAGS = new Set(['script','iframe','object','embed',...]);
 function sanitizeHTML(html) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
-    // 递归清理危险标签和属性
+    // 递归遍历，移除危险标签和 on* 属性
     return doc.body.innerHTML;
+}
+```
+
+### 5. 图片上传防护
+
+```javascript
+const MAX_IMAGES   = 5;              // 最多 5 张
+const MAX_IMG_SIZE = 4 * 1024 * 1024; // 单张 4MB 上限
+
+if (file.size > MAX_IMG_SIZE) {
+    showToast(`「${file.name}」超过 4MB 限制，已跳过`, 'warning');
+    return;
+}
+```
+
+### 6. 智能滚动控制
+
+```javascript
+let userScrolledUp = false;
+chatSection.addEventListener('scroll', () => {
+    const dist = chatSection.scrollHeight - chatSection.scrollTop - chatSection.clientHeight;
+    userScrolledUp = dist > 60; // 距底 60px 以内视为「在底部」
+});
+function scrollToBottom() {
+    if (userScrolledUp) return; // 用户上滑时停止自动跟随
+    requestAnimationFrame(() => { chatSection.scrollTop = chatSection.scrollHeight; });
 }
 ```
 
@@ -161,24 +180,26 @@ function sanitizeHTML(html) {
 
 ## 使用说明
 
-### 配置 API Key
-
-首次打开页面会弹出输入框，填入阿里云百炼 API Key 即可。Key 仅保存在本地浏览器，不会上传到任何服务器。
-
-> 获取地址：[阿里云百炼控制台](https://bailian.console.aliyun.com)，新用户通常有免费额度。
-
 ### 启动项目
 
 使用 VS Code Live Server 插件打开 `index.html` 即可，无需任何构建步骤。
+
+### 配置 API Key
+
+首次发送消息时会自动弹出输入框，填入阿里云百炼 API Key 即可。Key 仅保存在本地浏览器，不会上传到任何服务器。
+
+需要更换 Key 时，点击输入框右侧的钥匙图标按钮。
+
+> 获取地址：[阿里云百炼控制台](https://bailian.console.aliyun.com)，新用户通常有免费额度。
 
 ---
 
 ## 注意事项
 
-1. 首次加载需联网拉取 CDN 资源（Tailwind、marked、highlight.js）
+1. 首次加载需联网拉取 CDN 资源（Tailwind CSS、marked.js、highlight.js）
 2. 建议使用 Chrome / Edge 等现代浏览器
 3. 图片上传后以 base64 格式存于内存，刷新页面后清空
-4. API Key 存于 localStorage，请勿在公共设备使用
+4. API Key 存于 localStorage，请勿在公共设备上长期保存
 
 ---
 
@@ -196,4 +217,4 @@ function sanitizeHTML(html) {
 
 ---
 
-*最后更新：2026-03-18*
+*最后更新：2026-03-19*
