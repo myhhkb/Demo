@@ -28,87 +28,60 @@ lingxi/
 ├── css/
 │   └── index.css       # 全局样式
 └── js/
-    ├── theme.js        # 主题管理（初始化、切换、图标同步）
-    ├── ui.js           # UI 渲染（消息气泡、Markdown、代码块、Toast）
-    ├── api.js          # API 通信（流式 SSE、错误处理、图片上传）
-    └── index.js        # 核心调度（常量、DOM、状态、事件、消息发送）
+    ├── constants.js    # 全局常量（最先加载）
+    ├── theme.js        # 主题管理
+    ├── ui.js           # UI 渲染
+    ├── api.js          # API 通信
+    └── index.js        # 核心调度
 ```
-
-> 加载顺序：`theme.js` → `ui.js` → `api.js` → `index.js`，所有模块共享同一全局作用域。
-
----
-
-## 已完成功能清单
-
-### 首页
-
-- 四色宽域静态渐变标题「嗨，我是灵犀」（粉→紫→蓝→绿）
-- 4 张快捷建议卡片，2×4 网格排列，点击直接发送问题
-- 底部胶囊形输入框，内置回形针图标、图片预览圆圈、发送/停止按钮
-- 右侧外置：主题切换、清除对话、更换 API Key 三个圆形按钮
-- 页脚免责声明「内容由 AI 大模型生成，请仔细甄别」
-
-### 对话页
-
-- 顶部导航栏：左侧「← 返回主页」+ 右侧 Logo
-- AI 消息靠左，用户消息靠右，与输入框边缘对齐
-- AI 头像回答时旋转 + 光晕动画；图片加载失败时显示「灵」字占位
-- 「思考中...」三点呼吸动画占位气泡
-- 流式输出打字机效果，Markdown 实时渲染（80ms 节流）
-- 代码块：语法高亮（highlight.js）+ 语言标识 + 一键复制
-- 用户消息图片气泡：shimmer 加载 → 淡入，点击灯箱全屏预览
-- 分类错误气泡（网络失败 / API Key 无效 / 频率限制 / 服务器错误）
-- API Key 无效时自动清除旧 Key 并弹窗引导重新输入
-
-### 输入区
-
-- 多行文本自动扩展（最大 120px），超出显示内部滚动条
-- Enter 发送，Shift+Enter 换行
-- 最多同时上传 5 张图片，单张限 4MB，超限跳过并提示
-- 自定义 Tooltip（毛玻璃背景）覆盖所有可交互按钮
-
-### 安全与体验
-
-- XSS 防护：`marked` 配置 `html: false` + `sanitizeHTML()` 递归清理危险标签和属性
-- AI 输出时用户可自由上滑查看历史，回底部附近自动恢复跟随
-- 返回主页不清除对话历史，继续上下文
-- 主题切换状态 localStorage 持久化
-- 图片灯箱：全屏遮罩 + `backdrop-filter: blur` + 点击关闭
-
-### 多模态 AI
-
-- 纯文字使用 `qwen-plus`，上传图片自动切换 `qwen-vl-plus`
-- 支持图片 + 文字混合发送，多轮对话保持上下文
 
 ---
 
 ## 核心技术实现
 
-### 1. API Key 管理
+### 1. 流式输出 + 打字机效果
 
-API Key 不写入源码，仅存于浏览器 localStorage：
-
-- **首次使用**：发送消息时检测无 Key，弹出 `prompt` 引导输入
-- **主动更换**：点击输入框右侧钥匙图标按钮，随时更换
-- **Key 无效**：收到 401 响应时，自动清除旧 Key 并弹窗重新引导输入
+AI 回复采用 Server-Sent Events（SSE）流式接收，每收到一个文字片段（delta）立即追加显示，实现逐字输出的打字机效果。
 
 ```javascript
-// HTTP 状态码优先判断，避免错误消息字符串匹配失效
-const err = new Error(errMsg);
-err.status = response.status;
-throw err;
+const response = await fetch(ALIYUN_API_URL, {
+    method: 'POST',
+    headers: {
+        'Authorization': `Bearer ${getApiKey()}`,
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ model, messages, stream: true })
+});
 
-// 错误处理
-if (error.status === 401) {
-    localStorage.removeItem(API_KEY_STORAGE);
-    // 弹窗引导重新输入...
+const reader  = response.body.getReader();
+const decoder = new TextDecoder();
+let   buffer  = '';
+
+while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop(); // 保留最后不完整的行，等待下一个 chunk 拼接
+
+    for (const line of lines) {
+        if (!line.trim() || line.trim() === 'data: [DONE]') continue;
+        if (line.startsWith('data:')) {
+            const data  = JSON.parse(line.slice(5).trim());
+            const delta = data.choices?.[0]?.delta?.content;
+            if (delta) {
+                fullContent += delta;
+                scheduleRender(); // 节流渲染，避免每个 delta 都重建 DOM
+            }
+        }
+    }
 }
 ```
 
-### 2. 流式响应 + 节流渲染
+为减少 DOM 重建开销，引入 **80ms 节流渲染**，多个 delta 合并为一次 Markdown 解析，流式结束后强制完整渲染：
 
 ```javascript
-// 80ms 内多个 delta 合并为一次 DOM 更新
 function scheduleRender() {
     if (renderTimer) return;
     renderTimer = setTimeout(() => {
@@ -117,64 +90,154 @@ function scheduleRender() {
         scrollToBottom();
     }, 80);
 }
-// 流式结束后强制完整渲染
+
+// 流式结束：清除计时器，强制完整渲染
 if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
-renderMarkdown(bubble, fullContent);
+if (fullContent)  { renderMarkdown(bubble, fullContent); }
 ```
 
-### 3. 多模态消息构建
+---
 
-| 场景 | 模型 | 理由 |
-|------|------|------|
-| 纯文字 | `qwen-plus` | 速度快、成本低 |
-| 图文混合 | `qwen-vl-plus` | 支持视觉语言理解 |
+### 2. Markdown 渲染
+
+使用 **marked.js** 实时解析 AI 回复的 Markdown 文本，配合 **highlight.js** 实现代码语法高亮，并对渲染结果进行 XSS 过滤。
 
 ```javascript
+// 配置 marked：禁用原始 HTML 直通（XSS 防护）
+marked.setOptions({ breaks: true, gfm: true, html: false });
+
+function renderMarkdown(bubble, fullContent) {
+    bubble.innerHTML = sanitizeHTML(marked.parse(fullContent));
+
+    // 超长表格外层包裹横向滚动容器
+    bubble.querySelectorAll('table:not(.wrapped)').forEach(table => {
+        table.classList.add('wrapped');
+        const wrapper = document.createElement('div');
+        wrapper.className = 'table-wrapper';
+        table.parentNode.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+    });
+
+    // 代码块：语言标识 + 一键复制 + 语法高亮
+    bubble.querySelectorAll('pre code:not(.hljs):not(.highlight-pending)').forEach(codeBlock => {
+        codeBlock.classList.add('highlight-pending');
+        addCodeBlockHeader(codeBlock);
+    });
+}
+
+function addCodeBlockHeader(codeBlock) {
+    const lang = (codeBlock.className.match(/language-(\w+)/) || [])[1] || 'code';
+    const header = document.createElement('div');
+    header.className = 'code-block-header';
+    header.innerHTML = `<span>${lang}</span><button class="copy-code-btn">复制</button>`;
+    header.querySelector('.copy-code-btn').addEventListener('click', (e) => {
+        navigator.clipboard.writeText(codeBlock.textContent).then(() => {
+            e.target.textContent = '已复制';
+            setTimeout(() => { e.target.textContent = '复制'; }, 2000);
+        });
+    });
+    hljs.highlightElement(codeBlock);
+    codeBlock.parentElement.parentElement.insertBefore(header, codeBlock.parentElement);
+}
+```
+
+Markdown 渲染样式覆盖标题（H1 渐变色、H2 分割线）、段落、有序/无序列表、代码块、引用块、表格、链接等全部元素，深色/浅色模式各有独立配色。
+
+---
+
+### 3. 主题切换
+
+以 `html.dark` 类为核心驱动，CSS 变量统一响应配色变化，JavaScript 只负责类名切换和状态持久化。
+
+```css
+/* 深色模式（默认） */
+:root {
+    --bg-base: #0f1423;
+    --bg-card: #1e293b;
+    --text-primary: #f1f5f9;
+}
+/* 浅色模式 */
+html:not(.dark) {
+    --bg-base: #f8fafc;
+    --bg-card: #ffffff;
+    --text-primary: #1a1a1a;
+}
+```
+
+```javascript
+function initTheme() {
+    const saved      = localStorage.getItem(THEME_STORAGE);
+    const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark     = saved ? saved === 'dark' : preferDark; // 优先读 localStorage
+    document.documentElement.classList.toggle('dark', isDark);
+    applyThemeStyles(isDark);
+    syncThemeIcons();
+}
+
+function toggleTheme() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem(THEME_STORAGE, isDark ? 'dark' : 'light'); // 持久化
+    applyThemeStyles(isDark);
+    syncThemeIcons();
+}
+
+function syncThemeIcons() {
+    const isDark = document.documentElement.classList.contains('dark');
+    // 深色显示太阳（点击切浅色），浅色显示月亮（点击切深色）
+    themeBtn.querySelector('.sun-icon').classList.toggle('hidden', !isDark);
+    themeBtn.querySelector('.moon-icon').classList.toggle('hidden', isDark);
+}
+```
+
+---
+
+### 4. 图片上传与多模态识别
+
+用户可上传图片，通过 **FileReader** 转为 base64 格式后与文字消息一同发送给视觉语言模型分析。
+
+```javascript
+const MAX_IMAGES   = 5;               // 最多同时上传 5 张
+const MAX_IMG_SIZE = 4 * 1024 * 1024; // 单张限 4MB
+
+function handleImageUpload(e) {
+    files.forEach(file => {
+        if (file.size > MAX_IMG_SIZE) {
+            showToast(`「${file.name}」超过 4MB 限制，已跳过`, 'warning');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            uploadedImages.push({
+                id:   `img_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
+                name: file.name,
+                data: ev.target.result // base64 data URL
+            });
+            renderImagePreview();
+        };
+        reader.readAsDataURL(file);
+    });
+}
+```
+
+发送时根据是否携带图片自动切换模型，并构建符合 OpenAI Vision 规范的消息格式：
+
+```javascript
+// 有图片用视觉模型，否则用文字模型
+const model = hasImages ? MODEL_VISION : MODEL_TEXT;
+// MODEL_TEXT = 'qwen-plus'，MODEL_VISION = 'qwen-vl-plus'
+
 const userContent = hasImages
-    ? [...imageItems, { type: 'text', text: message }]
+    ? [
+        ...uploadedImages.map(img => ({
+            type: 'image_url',
+            image_url: { url: img.data } // base64 data URL
+        })),
+        { type: 'text', text: message || '请描述这张图片的内容。' }
+      ]
     : [{ type: 'text', text: message }];
 ```
 
-### 4. XSS 防护
-
-```javascript
-// marked 禁止 HTML 直通
-marked.setOptions({ html: false });
-
-// sanitizeHTML 递归清理危险标签和属性
-const DANGEROUS_TAGS = new Set(['script','iframe','object','embed',...]);
-function sanitizeHTML(html) {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    // 递归遍历，移除危险标签和 on* 属性
-    return doc.body.innerHTML;
-}
-```
-
-### 5. 图片上传防护
-
-```javascript
-const MAX_IMAGES   = 5;              // 最多 5 张
-const MAX_IMG_SIZE = 4 * 1024 * 1024; // 单张 4MB 上限
-
-if (file.size > MAX_IMG_SIZE) {
-    showToast(`「${file.name}」超过 4MB 限制，已跳过`, 'warning');
-    return;
-}
-```
-
-### 6. 智能滚动控制
-
-```javascript
-let userScrolledUp = false;
-chatSection.addEventListener('scroll', () => {
-    const dist = chatSection.scrollHeight - chatSection.scrollTop - chatSection.clientHeight;
-    userScrolledUp = dist > 60; // 距底 60px 以内视为「在底部」
-});
-function scrollToBottom() {
-    if (userScrolledUp) return; // 用户上滑时停止自动跟随
-    requestAnimationFrame(() => { chatSection.scrollTop = chatSection.scrollHeight; });
-}
-```
+图片在输入框内实时预览，发送后展示在对话气泡中，支持点击全屏灯箱查看。多轮对话中图片上下文随 `conversationHistory` 保持，AI 可在后续对话中继续引用。
 
 ---
 
@@ -182,24 +245,13 @@ function scrollToBottom() {
 
 ### 启动项目
 
-使用 VS Code Live Server 插件打开 `index.html` 即可，无需任何构建步骤。
+使用 VS Code / Cursor 的 **Live Server** 插件打开 `index.html`，必须通过 `http://` 协议访问（直接双击用 `file://` 打开会因 CORS 限制导致 API 请求失败）。
 
 ### 配置 API Key
 
-首次发送消息时会自动弹出输入框，填入阿里云百炼 API Key 即可。Key 仅保存在本地浏览器，不会上传到任何服务器。
-
-需要更换 Key 时，点击输入框右侧的钥匙图标按钮。
+首次发送消息时自动弹出输入框，填入阿里云百炼 API Key 即可，Key 仅保存在本地浏览器 localStorage，不会上传到任何服务器。需要更换时点击输入框右侧的钥匙图标按钮。
 
 > 获取地址：[阿里云百炼控制台](https://bailian.console.aliyun.com)，新用户通常有免费额度。
-
----
-
-## 注意事项
-
-1. 首次加载需联网拉取 CDN 资源（Tailwind CSS、marked.js、highlight.js）
-2. 建议使用 Chrome / Edge 等现代浏览器
-3. 图片上传后以 base64 格式存于内存，刷新页面后清空
-4. API Key 存于 localStorage，请勿在公共设备上长期保存
 
 ---
 
