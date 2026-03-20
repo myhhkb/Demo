@@ -2,38 +2,34 @@
 
 ## 项目基本信息
 
-- **姓名**：杨畅
-- **学校**：中南民族大学
-- **学号**：2024120443
-- **开发时间**：2026 年 3 月
-- **项目类型**：全栈训练营 Week01 作业
+
+|      |            |
+| ---- | ---------- |
+| 姓名   | 杨畅         |
+| 学校   | 中南民族大学     |
+| 学号   | 2024120443 |
+| 开发时间 | 2026 年 3 月 |
+
 
 ---
 
-## 项目简介
+## 开发任务索引
 
-这是一个仿 WPS 灵犀风格的 AI 对话助手，接入阿里云百炼大模型 API，实现真实的流式 AI 对话功能。项目采用原生 HTML + CSS + JavaScript 开发，无需任何构建工具，具备深色/浅色主题切换、流式响应、Markdown 渲染、代码高亮、图片上传识别等完整特性。
 
----
+| #   | 功能模块                                 | 状态  |
+| --- | ------------------------------------ | --- |
+| 1   | 首页欢迎区（渐变标题 + 四色卡片）                   | ✅   |
+| 2   | 文字对话（接入阿里云百炼 qwen-plus）              | ✅   |
+| 3   | 流式输出 + 打字机效果                         | ✅   |
+| 4   | Markdown 渲染（标题、列表、表格、代码块、引用）         | ✅   |
+| 5   | 代码块语法高亮 + 一键复制                       | ✅   |
+| 6   | 深色 / 浅色主题切换，刷新保持                     | ✅   |
+| 7   | 图片上传 + 预览 + 多模态识别（qwen-vl-plus）      | ✅   |
+| 8   | AI 生成中断（停止按钮）                        | ✅   |
+| 9   | 清除对话，回到首页状态                          | ✅   |
+| 10  | 键盘快捷键（Enter 发送 / Shift+Enter 换行）     | ✅   |
+| 11  | API Key 本地管理（首次引导 + 随时更换 + 401 自动清除） | ✅   |
 
-## 项目结构
-
-```
-lingxi/
-├── index.html          # 主页面
-├── README.md           # 项目文档
-├── assets/
-│   ├── linxi.png       # AI 头像
-│   └── logo.png        # 灵犀 Logo
-├── css/
-│   └── index.css       # 全局样式
-└── js/
-    ├── constants.js    # 全局常量（最先加载）
-    ├── theme.js        # 主题管理
-    ├── ui.js           # UI 渲染
-    ├── api.js          # API 通信
-    └── index.js        # 核心调度
-```
 
 ---
 
@@ -41,45 +37,9 @@ lingxi/
 
 ### 1. 流式输出 + 打字机效果
 
-AI 回复采用 Server-Sent Events（SSE）流式接收，每收到一个文字片段（delta）立即追加显示，实现逐字输出的打字机效果。
+请求携带 `stream: true`，用 Fetch 的 `ReadableStream` 逐块读取响应体，`TextDecoder` 解码后按换行切分 SSE 事件，提取每个 `delta` 累积到 `fullContent`。
 
-```javascript
-const response = await fetch(ALIYUN_API_URL, {
-    method: 'POST',
-    headers: {
-        'Authorization': `Bearer ${getApiKey()}`,
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ model, messages, stream: true })
-});
-
-const reader  = response.body.getReader();
-const decoder = new TextDecoder();
-let   buffer  = '';
-
-while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop(); // 保留最后不完整的行，等待下一个 chunk 拼接
-
-    for (const line of lines) {
-        if (!line.trim() || line.trim() === 'data: [DONE]') continue;
-        if (line.startsWith('data:')) {
-            const data  = JSON.parse(line.slice(5).trim());
-            const delta = data.choices?.[0]?.delta?.content;
-            if (delta) {
-                fullContent += delta;
-                scheduleRender(); // 节流渲染，避免每个 delta 都重建 DOM
-            }
-        }
-    }
-}
-```
-
-为减少 DOM 重建开销，引入 **80ms 节流渲染**，多个 delta 合并为一次 Markdown 解析，流式结束后强制完整渲染：
+为避免高频 DOM 操作导致卡顿，引入 **80ms 节流**——多个 delta 在窗口内合并为一次 `renderMarkdown` 调用，流结束后清除计时器强制完整渲染。
 
 ```javascript
 function scheduleRender() {
@@ -87,186 +47,73 @@ function scheduleRender() {
     renderTimer = setTimeout(() => {
         renderTimer = null;
         renderMarkdown(bubble, fullContent);
-        scrollToBottom();
     }, 80);
 }
-
-// 流式结束：清除计时器，强制完整渲染
-if (renderTimer) { clearTimeout(renderTimer); renderTimer = null; }
-if (fullContent)  { renderMarkdown(bubble, fullContent); }
 ```
-
----
 
 ### 2. Markdown 渲染
 
-使用 **marked.js** 实时解析 AI 回复的 Markdown 文本，配合 **highlight.js** 实现代码语法高亮，并对渲染结果进行 XSS 过滤。
-
-```javascript
-// 配置 marked：禁用原始 HTML 直通（XSS 防护）
-marked.setOptions({ breaks: true, gfm: true, html: false });
-
-function renderMarkdown(bubble, fullContent) {
-    bubble.innerHTML = sanitizeHTML(marked.parse(fullContent));
-
-    // 超长表格外层包裹横向滚动容器
-    bubble.querySelectorAll('table:not(.wrapped)').forEach(table => {
-        table.classList.add('wrapped');
-        const wrapper = document.createElement('div');
-        wrapper.className = 'table-wrapper';
-        table.parentNode.insertBefore(wrapper, table);
-        wrapper.appendChild(table);
-    });
-
-    // 代码块：语言标识 + 一键复制 + 语法高亮
-    bubble.querySelectorAll('pre code:not(.hljs):not(.highlight-pending)').forEach(codeBlock => {
-        codeBlock.classList.add('highlight-pending');
-        addCodeBlockHeader(codeBlock);
-    });
-}
-
-function addCodeBlockHeader(codeBlock) {
-    const lang = (codeBlock.className.match(/language-(\w+)/) || [])[1] || 'code';
-    const header = document.createElement('div');
-    header.className = 'code-block-header';
-    header.innerHTML = `<span>${lang}</span><button class="copy-code-btn">复制</button>`;
-    header.querySelector('.copy-code-btn').addEventListener('click', (e) => {
-        navigator.clipboard.writeText(codeBlock.textContent).then(() => {
-            e.target.textContent = '已复制';
-            setTimeout(() => { e.target.textContent = '复制'; }, 2000);
-        });
-    });
-    hljs.highlightElement(codeBlock);
-    codeBlock.parentElement.parentElement.insertBefore(header, codeBlock.parentElement);
-}
-```
-
-Markdown 渲染样式覆盖标题（H1 渐变色、H2 分割线）、段落、有序/无序列表、代码块、引用块、表格、链接等全部元素，深色/浅色模式各有独立配色。
-
----
+使用 marked.js 解析，配置 `html: false` 防止 AI 回复中的原始 HTML 直通执行，输出结果再经 `sanitizeHTML` 递归过滤危险标签和 `on*` 事件属性。代码块渲染后动态注入头部 DOM，调用 `hljs.highlightElement` 高亮，用 `.highlight-pending` 标记类防止节流窗口内重复处理同一块。
 
 ### 3. 主题切换
 
-以 `html.dark` 类为核心驱动，CSS 变量统一响应配色变化，JavaScript 只负责类名切换和状态持久化。
+切换时只在 `html` 根节点上 toggle `dark` 类名，`applyThemeStyles` 负责同步 Tailwind 工具类覆盖不到的 inline style 元素，`localStorage` 持久化状态，`initTheme` 在页面加载时读取并恢复。
 
-```css
-/* 深色模式（默认） */
-:root {
-    --bg-base: #0f1423;
-    --bg-card: #1e293b;
-    --text-primary: #f1f5f9;
-}
-/* 浅色模式 */
-html:not(.dark) {
-    --bg-base: #f8fafc;
-    --bg-card: #ffffff;
-    --text-primary: #1a1a1a;
-}
-```
+### 4. 图片上传与多模态
 
-```javascript
-function initTheme() {
-    const saved      = localStorage.getItem(THEME_STORAGE);
-    const preferDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark     = saved ? saved === 'dark' : preferDark; // 优先读 localStorage
-    document.documentElement.classList.toggle('dark', isDark);
-    applyThemeStyles(isDark);
-    syncThemeIcons();
-}
-
-function toggleTheme() {
-    const isDark = document.documentElement.classList.toggle('dark');
-    localStorage.setItem(THEME_STORAGE, isDark ? 'dark' : 'light'); // 持久化
-    applyThemeStyles(isDark);
-    syncThemeIcons();
-}
-
-function syncThemeIcons() {
-    const isDark = document.documentElement.classList.contains('dark');
-    // 深色显示太阳（点击切浅色），浅色显示月亮（点击切深色）
-    themeBtn.querySelector('.sun-icon').classList.toggle('hidden', !isDark);
-    themeBtn.querySelector('.moon-icon').classList.toggle('hidden', isDark);
-}
-```
+`FileReader.readAsDataURL` 将图片转为 base64，发送前限制最多 5 张、单张 4MB。检测到附件后自动切换 `qwen-vl-plus` 视觉模型，消息体按 OpenAI Vision 格式构建，`image_url` 与 `text` 并列放入 `content` 数组，模型切换对用户透明。
 
 ---
 
-### 4. 图片上传与多模态识别
+## UI 细节
 
-用户可上传图片，通过 **FileReader** 转为 base64 格式后与文字消息一同发送给视觉语言模型分析。
+这是开发过程中投入精力最多的部分，以下是一些不容易被直接注意到但影响使用体验的细节。
 
-```javascript
-const MAX_IMAGES   = 5;               // 最多同时上传 5 张
-const MAX_IMG_SIZE = 4 * 1024 * 1024; // 单张限 4MB
+### 消息与动画
 
-function handleImageUpload(e) {
-    files.forEach(file => {
-        if (file.size > MAX_IMG_SIZE) {
-            showToast(`「${file.name}」超过 4MB 限制，已跳过`, 'warning');
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            uploadedImages.push({
-                id:   `img_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
-                name: file.name,
-                data: ev.target.result // base64 data URL
-            });
-            renderImagePreview();
-        };
-        reader.readAsDataURL(file);
-    });
-}
-```
+- **AI 头像响应状态**：AI 生成期间头像持续旋转并附带紫色光晕脉冲动画，停止生成后动画立即结束，状态反馈直观
+- **头像降级处理**：头像图片加载失败时自动替换为「灵」字文字占位，两种主题下分别有对应的配色，不会出现破图
+- **消息入场动画**：每条消息通过 `message-slide` 动画从下方滑入，有轻微位移 + 渐显，不突兀
+- **「思考中」占位**：发送后立即出现带呼吸感的三点动画占位，而不是空白等待
 
-发送时根据是否携带图片自动切换模型，并构建符合 OpenAI Vision 规范的消息格式：
+### 图片交互
 
-```javascript
-// 有图片用视觉模型，否则用文字模型
-const model = hasImages ? MODEL_VISION : MODEL_TEXT;
-// MODEL_TEXT = 'qwen-plus'，MODEL_VISION = 'qwen-vl-plus'
+- **shimmer 加载态**：用户发送图片时，气泡中先显示带光扫动画的骨架屏，图片加载完成后淡入显示，避免图片突然跳出
+- **点击灯箱**：对话气泡中的图片点击后全屏展示，背景毛玻璃模糊，点击任意位置关闭，符合直觉
+- **输入框预览缩略图**：上传图片后在输入框内实时显示小圆形预览，可单独点 × 删除，不影响其他图片
 
-const userContent = hasImages
-    ? [
-        ...uploadedImages.map(img => ({
-            type: 'image_url',
-            image_url: { url: img.data } // base64 data URL
-        })),
-        { type: 'text', text: message || '请描述这张图片的内容。' }
-      ]
-    : [{ type: 'text', text: message }];
-```
+### 输入区
 
-图片在输入框内实时预览，发送后展示在对话气泡中，支持点击全屏灯箱查看。多轮对话中图片上下文随 `conversationHistory` 保持，AI 可在后续对话中继续引用。
+- **自适应高度**：输入框随内容自动扩展，最大到 120px 后出现内部滚动，不会撑破布局
+- **右侧留白动态计算**：每次图片预览区宽度变化后，重新计算输入框的 `paddingRight`，防止文字被右侧按钮组遮挡
+- **Tooltip 提示**：所有操作按钮（主题切换、清除对话、更换 Key、上传图片）鼠标悬停时显示毛玻璃风格的文字提示
 
----
+### 滚动行为
 
-## 使用说明
+- **智能跟随**：AI 流式输出期间自动滚动到底部；若用户主动上滑查看历史，自动跟随暂停，不强制打断阅读；回到底部附近后恢复跟随
 
-### 启动项目
+### 错误处理
 
-使用 VS Code / Cursor 的 **Live Server** 插件打开 `index.html`，必须通过 `http://` 协议访问（直接双击用 `file://` 打开会因 CORS 限制导致 API 请求失败）。
-
-### 配置 API Key
-
-首次发送消息时自动弹出输入框，填入阿里云百炼 API Key 即可，Key 仅保存在本地浏览器 localStorage，不会上传到任何服务器。需要更换时点击输入框右侧的钥匙图标按钮。
-
-> 获取地址：[阿里云百炼控制台](https://bailian.console.aliyun.com)，新用户通常有免费额度。
+- **分类错误提示**：网络失败、API Key 无效、频率限制、服务器错误分别显示不同的提示文案，而不是统一的「请求失败」
+- **401 自动恢复**：Key 无效时自动清除旧 Key 并弹窗引导重新输入，用户不需要手动刷新页面
+- **Toast 分级**：成功、警告、错误、信息四种 Toast 各有独立图标和配色，从底部滑入、自动消失
 
 ---
 
 ## 技术栈
 
-| 分类 | 技术 |
-|------|------|
-| 结构 | HTML5 语义化标签 |
-| 样式 | CSS3（变量、Flexbox、Grid、动画）+ Tailwind CSS CDN |
-| 脚本 | 原生 JavaScript ES6+（Fetch、Async/Await、AbortController）|
-| AI 接口 | 阿里云百炼 OpenAI 兼容接口（qwen-plus / qwen-vl-plus）|
-| Markdown | marked.js |
-| 代码高亮 | highlight.js（atom-one-dark 主题）|
-| 字体 | Noto Sans SC（Google Fonts）|
+
+| 分类       | 技术                                                       |
+| -------- | -------------------------------------------------------- |
+| 结构       | HTML5                                                    |
+| 样式       | CSS3 + Tailwind CSS CDN                                  |
+| 脚本       | 原生 JavaScript ES6+（Fetch、ReadableStream、AbortController） |
+| AI 接口    | 阿里云百炼 OpenAI 兼容接口（qwen-plus / qwen-vl-plus）              |
+| Markdown | marked.js                                                |
+| 代码高亮     | highlight.js（atom-one-dark 主题）                           |
+| 字体       | Noto Sans SC                                             |
+
 
 ---
 
-*最后更新：2026-03-19*
+*最后更新：2026-03-20*
