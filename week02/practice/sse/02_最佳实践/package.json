@@ -1,0 +1,12 @@
+{
+  "name": "sse-best-practices",
+  "version": "1.0.0",
+  "description": "SSE 最佳实践练习",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["SSE", "EventSource", "best-practices"],
+  "author": "",
+  "license": "ISC"
+}

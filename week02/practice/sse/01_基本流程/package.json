@@ -1,0 +1,12 @@
+{
+  "name": "sse-practice",
+  "version": "1.0.0",
+  "description": "SSE 基本流程练习",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["SSE", "EventSource"],
+  "author": "",
+  "license": "ISC"
+}
