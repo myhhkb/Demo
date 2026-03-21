@@ -1,0 +1,12 @@
+{
+  "name": "sse-integration",
+  "version": "1.0.0",
+  "description": "SSE 集成方案 - EventSource Polyfill 和 fetch-event-source",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["SSE", "EventSource", "Polyfill", "fetch-event-source"],
+  "author": "",
+  "license": "ISC"
+}
