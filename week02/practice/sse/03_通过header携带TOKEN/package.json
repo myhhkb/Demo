@@ -1,0 +1,12 @@
+{
+  "name": "sse-header-token",
+  "version": "1.0.0",
+  "description": "SSE 通过 Header 携带 Token 认证",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["SSE", "EventSource", "Header", "Token"],
+  "author": "",
+  "license": "ISC"
+}
