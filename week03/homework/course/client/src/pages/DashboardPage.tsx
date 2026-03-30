@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Card, Row, Col, Statistic, Spin, message } from 'antd';
 import {
   BookOutlined,
-  CheckCircleOutlined,
   UserOutlined,
+  PercentageOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -39,6 +39,14 @@ const DashboardPage: React.FC = () => {
   }
 
   const COLORS = ['#1890ff', '#52c41a', '#faad14', '#f5222d', '#722ed1', '#13c2c2'];
+  
+  // 计算发布率和活跃率
+  const publishRate = data.stats.totalCourses > 0 
+    ? Math.round((data.stats.publishedCourses / data.stats.totalCourses) * 100)
+    : 0;
+  const activeRate = data.stats.totalStudents > 0
+    ? Math.round((data.stats.activeStudents / data.stats.totalStudents) * 100)
+    : 0;
 
   return (
     <div className="space-y-6">
@@ -57,16 +65,6 @@ const DashboardPage: React.FC = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="已发布课程"
-              value={data.stats.publishedCourses}
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic
               title="学生总数"
               value={data.stats.totalStudents}
               prefix={<UserOutlined />}
@@ -77,8 +75,20 @@ const DashboardPage: React.FC = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="活跃学生"
-              value={data.stats.activeStudents}
+              title="课程发布率"
+              value={publishRate}
+              suffix="%"
+              prefix={<PercentageOutlined />}
+              valueStyle={{ color: '#52c41a' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="活跃学生率"
+              value={activeRate}
+              suffix="%"
               prefix={<TeamOutlined />}
               valueStyle={{ color: '#f5222d' }}
             />
@@ -112,8 +122,8 @@ const DashboardPage: React.FC = () => {
                 <YAxis yAxisId="right" orientation="right" />
                 <Tooltip />
                 <Legend />
-                <Line yAxisId="left" type="monotone" dataKey="students" stroke="#1890ff" name="学习人数" />
-                <Line yAxisId="right" type="monotone" dataKey="duration" stroke="#52c41a" name="学习时长(小时)" />
+                <Line yAxisId="left" type="linear" dataKey="students" stroke="#1890ff" name="学习人数" />
+                <Line yAxisId="right" type="linear" dataKey="duration" stroke="#52c41a" name="学习时长(小时)" />
               </LineChart>
             </ResponsiveContainer>
           </Card>
