@@ -35,10 +35,12 @@ router.get('/', authenticateToken, async (ctx) => {
   }
 
   const total = rows.length;
-  const list = rows.slice(offset, offset + Number(pageSize)).map(s => ({
-    ...s,
-    course_ids: JSON.parse(s.course_ids || '[]'),
-  }));
+  const allCourses = db.prepare('SELECT id, name FROM courses').all();
+  const list = rows.slice(offset, offset + Number(pageSize)).map(s => {
+    const courseIds = JSON.parse(s.course_ids || '[]');
+    const enrolledCourses = allCourses.filter(c => courseIds.includes(c.id));
+    return { ...s, course_ids: courseIds, enrolledCourses };
+  });
 
   success(ctx, { list, total, page: Number(page), pageSize: Number(pageSize) });
 });

@@ -74,7 +74,10 @@ setModalVisible(true);
 };
 const handleEdit = (student: Student) => {
 setEditingStudent(student);
-form.setFieldsValue(student);
+form.setFieldsValue({
+  ...student,
+  course_ids: student.course_ids,
+});
 setModalVisible(true);
 };
 const handleDelete = async (id: number) => {

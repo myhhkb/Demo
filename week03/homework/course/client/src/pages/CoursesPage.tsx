@@ -266,7 +266,7 @@ const CoursesPage: React.FC = () => {
                       onClick={() => handleToggleStatus(course.id)}
                       style={{ color: '#5B9BD5' }}
                     >
-                      发布
+                      {course.status === 'published' ? '下架' : '发布'}
                     </Button>
                     <Popconfirm
                       title="确定删除？"
