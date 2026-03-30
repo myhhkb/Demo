@@ -9,15 +9,15 @@ x64
 
 week01/homework/lingxi/ISSUES.md
 
-
 # !是不忽略的意思
 !*.sln  
 !*.vcxproj
 !*.filters
 
-#忽略所有.user结尾的文件
+# 忽略所有.user结尾的文件
 *.user
 
+# Node.js
 node_modules
 typings
 npm-debug.log*
@@ -25,13 +25,36 @@ yarn-debug.log*
 yarn-error.log*
 .pnp
 .pnp.js
+
+# 系统文件
 .DS_Store
 
-# 构建输出
+# 构建输出（除了作业项目需要提交的）
 dist/
 build/
+!week03/homework/course/client/dist/
+!week03/homework/course/client/dist/**
 
 # 依赖锁文件
 package-lock.json
 yarn.lock
 
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 数据库
+*.db
+*.db-shm
+*.db-wal
+
+# 日志
+*.log

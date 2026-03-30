@@ -1,0 +1,35 @@
+{
+  "name": "homework-client",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "作业项目 - 客户端",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "antd": "^5.11.0",
+    "@ant-design/icons": "^5.2.0",
+    "axios": "^1.6.0",
+    "markdown-it": "^13.0.0",
+    "markdown-it-highlightjs": "^4.0.1",
+    "recharts": "^2.10.0",
+    "highlight.js": "^11.9.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/node": "^20.0.0",
+    "@types/markdown-it": "^13.0.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "tailwindcss": "^3.3.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0"
+  }
+}
