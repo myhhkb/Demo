@@ -76,7 +76,7 @@ export interface DashboardData {
   };
   charts: {
     enrollment: Array<{ name: string; value: number }>;
-    activity: Array<{ date: string; label: string; students: number; activeStudents: number; duration: number }>;
+    activity: Array<{ date: string; label: string; students: number; duration: number }>;
     statusDist: Array<{ name: string; value: number }>;
     categoryDist: Array<{ name: string; value: number }>;
   };

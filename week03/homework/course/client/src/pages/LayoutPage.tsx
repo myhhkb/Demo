@@ -65,6 +65,8 @@ const LayoutPage: React.FC<LayoutPageProps> = ({ user }) => {
     },
   ];
 
+  const siderWidth = collapsed ? 80 : 160;
+
   return (
     <Layout className="min-h-screen" style={{ backgroundColor: '#F5F5F5' }}>
       {/* 侧边栏 */}
@@ -73,9 +75,17 @@ const LayoutPage: React.FC<LayoutPageProps> = ({ user }) => {
         collapsible
         collapsed={collapsed}
         width={160}
+        collapsedWidth={80}
         style={{
           backgroundColor: '#FFFFFF',
           borderRight: '1px solid #E0E0E0',
+          position: 'fixed',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          height: '100vh',
+          zIndex: 1000,
+          overflow: 'auto',
         }}
       >
         {/* Logo 区域 */}
@@ -133,7 +143,12 @@ const LayoutPage: React.FC<LayoutPageProps> = ({ user }) => {
         </div>
       </Layout.Sider>
 
-      <Layout>
+      <Layout
+        style={{
+          marginLeft: siderWidth,
+          transition: 'margin-left 0.2s ease',
+        }}
+      >
         {/* 顶栏 */}
         <Layout.Header
           style={{

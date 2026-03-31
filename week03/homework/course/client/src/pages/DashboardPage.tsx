@@ -86,24 +86,16 @@ const DashboardPage: React.FC = () => {
     shortName: extractTechName(item.name),
   }));
 
-  // 保证绿色虚线可显示：
-  // - 接口如果没返回 activeStudents，则回退到 students
-  // - 保证 activeStudents 严格小于 students（当 students > 0 时）
+  // 折线图数据：学习人数和学习时长
+  // - students: 当天学习人数
+  // - duration: 当天学习时长（小时）
   const activityData = data.charts.activity.map((item) => {
     const students = Number(item.students || 0);
-    const activeRaw = Number((item as any).activeStudents ?? students);
-
-    let activeStudents = Math.max(0, activeRaw);
-    if (students > 0) {
-      activeStudents = Math.min(activeStudents, students - 1);
-    } else {
-      activeStudents = 0;
-    }
-
+    const duration = Number(item.duration || 0);
     return {
       ...item,
       students,
-      activeStudents,
+      duration,
     };
   });
 
@@ -195,16 +187,16 @@ const DashboardPage: React.FC = () => {
               <YAxis tick={{ fontSize: 11, fill: '#999' }} allowDecimals={false} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#FFFFFF', border: '1px solid #D0D0D0', borderRadius: '4px' }}
-                formatter={(value, name) => [value, name === 'students' ? '学习人数' : '活跃学生数']}
+                formatter={(value, name) => [value, name === 'students' ? '学习人数' : '学习时长（小时）']}
               />
               <Legend
-                formatter={(value) => (value === 'students' ? '学习人数' : '活跃学生数')}
+                formatter={(value) => (value === 'students' ? '学习人数' : '学习时长（小时）')}
                 wrapperStyle={{ fontSize: 12 }}
               />
               <Line
                 type="monotone"
-                dataKey="activeStudents"
-                name="activeStudents"
+                dataKey="duration"
+                name="duration"
                 stroke="#70AD47"
                 strokeWidth={3}
                 strokeDasharray="8 4"

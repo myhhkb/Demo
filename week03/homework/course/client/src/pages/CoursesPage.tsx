@@ -11,7 +11,7 @@ import {
   Tag,
   Pagination,
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SwapOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SwapOutlined, SearchOutlined, CaretUpOutlined, CaretDownOutlined } from '@ant-design/icons';
 import { coursesApi, Course } from '../api';
 
 const CoursesPage: React.FC = () => {
@@ -28,6 +28,8 @@ const CoursesPage: React.FC = () => {
     keyword: '',
     status: '',
     category: '',
+    sortField: '',
+    sortOrder: '',
   });
 
   useEffect(() => {
@@ -107,6 +109,17 @@ const CoursesPage: React.FC = () => {
     } catch (error: any) {
       message.error(error.msg || '操作失败');
     }
+  };
+
+  const handleSortByStudentCount = (order: 'ascend' | 'descend') => {
+    const isSameOrder = filters.sortField === 'student_count' && filters.sortOrder === order;
+
+    setFilters({
+      ...filters,
+      sortField: isSameOrder ? '' : 'student_count',
+      sortOrder: isSameOrder ? '' : order,
+    });
+    setPage(1);
   };
 
   return (
@@ -212,7 +225,27 @@ const CoursesPage: React.FC = () => {
                 课时
               </th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#333333' }}>
-                选课人数
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  选课人数
+                  <span style={{ display: 'inline-flex', flexDirection: 'column', lineHeight: 1 }}>
+                    <CaretUpOutlined
+                      style={{
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                        color: filters.sortField === 'student_count' && filters.sortOrder === 'ascend' ? '#5B9BD5' : '#999999',
+                      }}
+                      onClick={() => handleSortByStudentCount('ascend')}
+                    />
+                    <CaretDownOutlined
+                      style={{
+                        fontSize: '10px',
+                        cursor: 'pointer',
+                        color: filters.sortField === 'student_count' && filters.sortOrder === 'descend' ? '#5B9BD5' : '#999999',
+                      }}
+                      onClick={() => handleSortByStudentCount('descend')}
+                    />
+                  </span>
+                </span>
               </th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#333333' }}>
                 状态

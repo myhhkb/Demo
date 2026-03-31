@@ -31,20 +31,11 @@ router.get('/', authenticateToken, async (ctx) => {
       FROM learning_records WHERE date = ?
     `).get(dateStr);
 
-    // 活跃学生数：当天有学习记录且状态为 active 的学生数
-    const activeRecord = db.prepare(`
-      SELECT COUNT(DISTINCT lr.student_id) as activeStudents
-      FROM learning_records lr
-      JOIN students s ON s.id = lr.student_id
-      WHERE lr.date = ? AND s.status = 'active'
-    `).get(dateStr);
-
     const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
     activity.push({
       date: dateStr,
       label: weekDays[date.getDay()],
       students: record.students,
-      activeStudents: activeRecord.activeStudents,
       duration: Math.round(record.duration / 60),
     });
   }
