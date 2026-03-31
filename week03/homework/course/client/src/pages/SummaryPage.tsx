@@ -39,6 +39,20 @@ const SummaryPage: React.FC = () => {
     },
   });
 
+  // 将 Markdown 中的相对图片路径重写为后端静态资源接口路径
+  const defaultImageRender = md.renderer.rules.image!;
+  md.renderer.rules.image = (tokens, idx, options, env, self) => {
+    const token = tokens[idx];
+    const srcIndex = token.attrIndex('src');
+    if (srcIndex >= 0) {
+      const src = token.attrs![srcIndex][1];
+      if (src && !src.startsWith('http') && !src.startsWith('/')) {
+        token.attrs![srcIndex][1] = `/api/static/${src}`;
+      }
+    }
+    return defaultImageRender(tokens, idx, options, env, self);
+  };
+
   const renderMarkdown = (markdown: string) => {
     const html = md.render(markdown);
     return (
