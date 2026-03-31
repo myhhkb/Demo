@@ -238,7 +238,17 @@ return (
               <div style={{ fontSize: '12px', color: '#999999' }}>{student.email}</div>
             </td>
             <td style={{ padding: '12px 16px', color: '#666666' }}>
-              {student.enrolledCourses?.map((course) => course.name).join('、') || '-'}
+              <div
+                style={{
+                  maxWidth: '240px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+                title={student.enrolledCourses?.map((course) => course.name)?.join('、') || '-'}
+              >
+                {student.enrolledCourses?.map((course) => course.name)?.join('、') || '-'}
+              </div>
             </td>
             <td style={{ padding: '12px 16px' }}>
               <Tag color={student.status === 'active' ? 'green' : 'orange'}>
