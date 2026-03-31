@@ -363,6 +363,7 @@ const CoursesPage: React.FC = () => {
               rules={[
                 { pattern: /^\d+$/, message: '课时数必须是正整数' },
               ]}
+              validateTrigger="onBlur"
             >
               <Input type="number" placeholder="0" min={0} />
             </Form.Item>

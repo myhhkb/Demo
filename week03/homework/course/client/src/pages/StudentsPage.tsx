@@ -359,8 +359,9 @@ return (
           name="phone"
           label="手机号"
           rules={[
-            { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确（11位，以1开头）' },
+            { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确' },
           ]}
+          validateTrigger="onBlur"
         >
           <Input placeholder="13805425354" maxLength={11} />
         </Form.Item>
@@ -370,6 +371,7 @@ return (
           rules={[
             { type: 'email', message: '邮箱格式不正确' },
           ]}
+          validateTrigger="onBlur"
         >
           <Input type="email" placeholder="student1@..." />
         </Form.Item>
