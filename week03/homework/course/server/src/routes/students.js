@@ -68,11 +68,20 @@ router.get('/:id', authenticateToken, async (ctx) => {
 router.post('/', authenticateToken, async (ctx) => {
   const { name, student_no, class_name, phone, email, status, course_ids } = ctx.request.body;
 
-  if (!name) {
+  if (!name || !name.trim()) {
     return fail(ctx, 400, '学生姓名不能为空');
   }
   if (!student_no) {
     return fail(ctx, 400, '学号不能为空');
+  }
+  if (!/^\d{8}$/.test(student_no)) {
+    return fail(ctx, 400, '学号必须是8位纯数字');
+  }
+  if (phone && !/^1[3-9]\d{9}$/.test(phone)) {
+    return fail(ctx, 400, '手机号格式不正确（11位，以1开头）');
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return fail(ctx, 400, '邮箱格式不正确');
   }
 
   const existing = db.prepare('SELECT * FROM students WHERE student_no = ?').get(student_no);
@@ -84,7 +93,7 @@ router.post('/', authenticateToken, async (ctx) => {
     INSERT INTO students (name, student_no, class_name, phone, email, status, course_ids)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `).run(
-    name,
+    name.trim(),
     student_no,
     class_name || '',
     phone || '',
@@ -109,6 +118,20 @@ router.put('/:id', authenticateToken, async (ctx) => {
 
   const { name, student_no, class_name, phone, email, status, course_ids } = ctx.request.body;
 
+  // 验证字段格式
+  if (name && !name.trim()) {
+    return fail(ctx, 400, '学生姓名不能为空');
+  }
+  if (student_no && !/^\d{8}$/.test(student_no)) {
+    return fail(ctx, 400, '学号必须是8位纯数字');
+  }
+  if (phone && !/^1[3-9]\d{9}$/.test(phone)) {
+    return fail(ctx, 400, '手机号格式不正确（11位，以1开头）');
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return fail(ctx, 400, '邮箱格式不正确');
+  }
+
   // 检查学号唯一性（如果修改了学号）
   if (student_no && student_no !== existing.student_no) {
     const duplicate = db.prepare('SELECT * FROM students WHERE student_no = ?').get(student_no);
@@ -121,7 +144,7 @@ router.put('/:id', authenticateToken, async (ctx) => {
     UPDATE students SET name = ?, student_no = ?, class_name = ?, phone = ?, email = ?, status = ?, course_ids = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `).run(
-    name ?? existing.name,
+    name ? name.trim() : existing.name,
     student_no ?? existing.student_no,
     class_name ?? existing.class_name,
     phone ?? existing.phone,

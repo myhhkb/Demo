@@ -320,9 +320,12 @@ return (
         <Form.Item
           name="student_no"
           label="学号"
-          rules={[{ required: true, message: '请输入学号' }]}
+          rules={[
+            { required: true, message: '请输入学号' },
+            { pattern: /^\d{8}$/, message: '学号必须是8位纯数字' },
+          ]}
         >
-          <Input placeholder="20240001" disabled={!!editingStudent} />
+          <Input placeholder="20240001" disabled={!!editingStudent} maxLength={8} />
         </Form.Item>
       </div>
       {/* 第二行：班级、状态 */}
@@ -355,12 +358,18 @@ return (
         <Form.Item
           name="phone"
           label="手机号"
+          rules={[
+            { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确（11位，以1开头）' },
+          ]}
         >
-          <Input placeholder="13805425354" />
+          <Input placeholder="13805425354" maxLength={11} />
         </Form.Item>
         <Form.Item
           name="email"
           label="邮箱"
+          rules={[
+            { type: 'email', message: '邮箱格式不正确' },
+          ]}
         >
           <Input type="email" placeholder="student1@..." />
         </Form.Item>

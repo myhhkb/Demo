@@ -360,8 +360,11 @@ const CoursesPage: React.FC = () => {
             <Form.Item
               name="lesson_count"
               label="课时数"
+              rules={[
+                { pattern: /^\d+$/, message: '课时数必须是正整数' },
+              ]}
             >
-              <Input type="number" placeholder="0" />
+              <Input type="number" placeholder="0" min={0} />
             </Form.Item>
 
             <Form.Item

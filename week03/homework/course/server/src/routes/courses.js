@@ -57,14 +57,17 @@ router.get('/:id', authenticateToken, async (ctx) => {
 router.post('/', authenticateToken, async (ctx) => {
   const { name, description, instructor, category, status, lesson_count } = ctx.request.body;
 
-  if (!name) {
+  if (!name || !name.trim()) {
     return fail(ctx, 400, '课程名称不能为空');
+  }
+  if (lesson_count !== undefined && lesson_count !== null && (!/^\d+$/.test(String(lesson_count)) || Number(lesson_count) < 0)) {
+    return fail(ctx, 400, '课时数必须是非负整数');
   }
 
   const result = db.prepare(`
     INSERT INTO courses (name, description, instructor, category, status, lesson_count)
     VALUES (?, ?, ?, ?, ?, ?)
-  `).run(name, description || '', instructor || '', category || '', status || 'draft', lesson_count || 0);
+  `).run(name.trim(), description || '', instructor || '', category || '', status || 'draft', lesson_count || 0);
 
   const course = db.prepare('SELECT * FROM courses WHERE id = ?').get(result.lastInsertRowid);
   ctx.status = 201;
@@ -79,11 +82,18 @@ router.put('/:id', authenticateToken, async (ctx) => {
 
   const { name, description, instructor, category, status, lesson_count } = ctx.request.body;
 
+  if (name && !name.trim()) {
+    return fail(ctx, 400, '课程名称不能为空');
+  }
+  if (lesson_count !== undefined && lesson_count !== null && (!/^\d+$/.test(String(lesson_count)) || Number(lesson_count) < 0)) {
+    return fail(ctx, 400, '课时数必须是非负整数');
+  }
+
   db.prepare(`
     UPDATE courses SET name = ?, description = ?, instructor = ?, category = ?, status = ?, lesson_count = ?, updated_at = CURRENT_TIMESTAMP
     WHERE id = ?
   `).run(
-    name ?? existing.name,
+    name ? name.trim() : existing.name,
     description ?? existing.description,
     instructor ?? existing.instructor,
     category ?? existing.category,
