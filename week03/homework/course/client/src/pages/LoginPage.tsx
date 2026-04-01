@@ -157,7 +157,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               fontSize: '12px',
               fontFamily: '"Source Han Sans CN", "Hiragino Sans GB", sans-serif',
             }}>
-              测试账号：admin / admin123
+              测试账号：admin/admin123
             </p>
           </div>
         </div>
