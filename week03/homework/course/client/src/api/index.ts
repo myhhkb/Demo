@@ -16,10 +16,15 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    const requestUrl = error.config?.url || '';
+
+    // 登录接口返回 401 时，不做全局跳转，让页面自己提示“用户名或密码错误”
+    if (status === 401 && !requestUrl.includes('/auth/login')) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
+
     return Promise.reject(error.response?.data || error);
   }
 );

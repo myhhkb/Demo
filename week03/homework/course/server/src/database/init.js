@@ -52,6 +52,7 @@ export function initDatabase() {
   `);
 
   seedData();
+  backfillRecentLearningRecords();
 }
 
 function seedData() {
@@ -143,4 +144,38 @@ function seedData() {
   }
 
   console.log('Mock 数据初始化完成');
+}
+
+function backfillRecentLearningRecords() {
+  const studentRows = db.prepare('SELECT id FROM students').all();
+  const courseRows = db.prepare('SELECT id FROM courses').all();
+
+  if (studentRows.length === 0 || courseRows.length === 0) return;
+
+  const studentIds = studentRows.map((s) => s.id);
+  const courseIds = courseRows.map((c) => c.id);
+
+  const countByDateStmt = db.prepare('SELECT COUNT(*) as count FROM learning_records WHERE date = ?');
+  const insertRecord = db.prepare(`
+    INSERT INTO learning_records (student_id, course_id, date, duration)
+    VALUES (?, ?, ?, ?)
+  `);
+
+  const today = new Date();
+  for (let dayOffset = 6; dayOffset >= 0; dayOffset--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - dayOffset);
+    const dateStr = date.toISOString().split('T')[0];
+
+    const existingCount = countByDateStmt.get(dateStr).count;
+    if (existingCount > 0) continue;
+
+    const recordCount = Math.floor(Math.random() * 10) + 5;
+    for (let i = 0; i < recordCount; i++) {
+      const studentId = studentIds[Math.floor(Math.random() * studentIds.length)];
+      const courseId = courseIds[Math.floor(Math.random() * courseIds.length)];
+      const duration = Math.floor(Math.random() * 90) + 10;
+      insertRecord.run(studentId, courseId, dateStr, duration);
+    }
+  }
 }
