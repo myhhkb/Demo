@@ -197,10 +197,9 @@ const DashboardPage: React.FC = () => {
                 type="monotone"
                 dataKey="duration"
                 name="duration"
-                stroke="#70AD47"
+                stroke="#5B9BD5"
                 strokeWidth={3}
-                strokeDasharray="8 4"
-                dot={{ r: 3, fill: '#70AD47' }}
+                dot={{ r: 3, fill: '#5B9BD5' }}
                 activeDot={{ r: 5 }}
                 connectNulls
               />
@@ -208,9 +207,10 @@ const DashboardPage: React.FC = () => {
                 type="monotone"
                 dataKey="students"
                 name="students"
-                stroke="#5B9BD5"
+                stroke="#70AD47"
                 strokeWidth={3}
-                dot={{ r: 3, fill: '#5B9BD5' }}
+                strokeDasharray="8 4"
+                dot={{ r: 3, fill: '#70AD47' }}
                 activeDot={{ r: 5 }}
               />
             </LineChart>
