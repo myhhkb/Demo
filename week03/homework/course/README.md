@@ -53,7 +53,7 @@
 
 ---
 
-## 四、其他希望老师看到的内容
+## 四、其他内容
 
 1. **代码风格**：本项目严格遵循 React 组件化思维，前端采用了 Tailwind CSS 配合 Ant Design 进行了细致的样式打磨，力求界面简洁现代且具备良好的交互反馈。
 2. **健壮性处理**：实现了统一的后端响应工具类（`success/fail`），并在前端配置了全局请求 loading 状态与错误提示（`message.error`），对常见的边界情况（如空数据、非法路径请求、图片 404 等）均做了针对性处理。
@@ -73,6 +73,11 @@ cd server && npm install && npm start
 
 ```bash
 cd client && npm install && npm run dev
+```
+### 拉取测试
+
+```bash
+cd week03/homework/course/server && npm start
 ```
 
 测试账号：`admin` / `admin123`
