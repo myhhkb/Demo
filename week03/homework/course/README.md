@@ -74,10 +74,6 @@ cd server && npm install && npm start
 ```bash
 cd client && npm install && npm run dev
 ```
-### 拉取测试
 
-```bash
-cd week03/homework/course/server && npm start
-```
 
 测试账号：`admin` / `admin123`
