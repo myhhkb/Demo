@@ -17,7 +17,6 @@ import { studentsApi, coursesApi, Student, Course } from '../api';
 const StudentsPage: React.FC = () => {
 const [students, setStudents] = useState<Student[]>([]);
 const [total, setTotal] = useState(0);
-const [loading, setLoading] = useState(false);
 const [page, setPage] = useState(1);
 const [pageSize, setPageSize] = useState(10);
 const [classes, setClasses] = useState<string[]>([]);
@@ -36,7 +35,6 @@ loadClasses();
 loadCourses();
 }, [page, pageSize, filters]);
 const loadStudents = async () => {
-setLoading(true);
 try {
   const res = await studentsApi.getStudents({
     page,
@@ -47,8 +45,6 @@ try {
   setTotal(res.data.total);
 } catch (error: any) {
   message.error(error.msg || '加载学生失败');
-} finally {
-  setLoading(false);
 }
 };
 const loadClasses = async () => {
@@ -216,7 +212,7 @@ return (
         </tr>
       </thead>
       <tbody>
-        {students.map((student, index) => (
+        {students.map((student) => (
           <tr
             key={student.id}
             style={{

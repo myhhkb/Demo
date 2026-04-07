@@ -17,7 +17,6 @@ import { coursesApi, Course } from '../api';
 const CoursesPage: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [categories, setCategories] = useState<string[]>([]);
@@ -38,7 +37,6 @@ const CoursesPage: React.FC = () => {
   }, [page, pageSize, filters]);
 
   const loadCourses = async () => {
-    setLoading(true);
     try {
       const res = await coursesApi.getCourses({
         page,
@@ -49,8 +47,6 @@ const CoursesPage: React.FC = () => {
       setTotal(res.data.total);
     } catch (error: any) {
       message.error(error.msg || '加载课程失败');
-    } finally {
-      setLoading(false);
     }
   };
 

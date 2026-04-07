@@ -11,7 +11,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [passwordVisible, setPasswordVisible] = useState(false);
   const [focusedField, setFocusedField] = useState<'username' | 'password' | null>('username');
 
   const handleLogin = async () => {
