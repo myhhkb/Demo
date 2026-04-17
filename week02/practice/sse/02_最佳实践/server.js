@@ -1,11 +1,16 @@
+// 引入 Node.js 内置模块。
+// - http：创建服务器
+// - fs：读取静态文件
+// - path：处理文件路径
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
+// 创建 HTTP 服务。
 const server = http.createServer((req, res) => {
-  // 处理 SSE 连接
+  // 处理 SSE 长连接请求。
   if (req.url === '/api/sse') {
-    // 设置 SSE 响应头
+    // 告诉浏览器：这是一个 SSE 数据流，而不是普通的一次性响应。
     res.writeHead(200, {
       'Content-Type': 'text/event-stream; charset=utf-8',
       'Cache-Control': 'no-cache',
@@ -15,7 +20,7 @@ const server = http.createServer((req, res) => {
 
     console.log('新客户端连接');
 
-    // 发送欢迎消息
+    // 先推送一个 welcome 事件，表示连接已建立。
     res.write('event: welcome\n');
     res.write('data: 欢迎连接到 SSE 服务器\n\n');
 
@@ -23,22 +28,23 @@ const server = http.createServer((req, res) => {
     const interval = setInterval(() => {
       count++;
 
-      // 根据计数发送不同类型的事件
+      // 演示“自定义事件名”的用法。
+      // 不同事件类型可以在前端分别监听、分别处理。
       if (count % 3 === 1) {
-        // 发送消息事件
+        // 普通消息事件
         res.write('event: message\n');
         res.write(`data: 这是第 ${count} 条消息\n\n`);
       } else if (count % 3 === 2) {
-        // 发送通知事件
+        // 通知事件
         res.write('event: notification\n');
         res.write(`data: 🔔 您有一条新通知 (${count})\n\n`);
       } else {
-        // 发送心跳事件
+        // 心跳事件：真实项目里常用来维持连接活跃或表示服务仍正常。
         res.write('event: heartbeat\n');
         res.write(`data: 心跳信号 - ${new Date().toLocaleTimeString()}\n\n`);
       }
 
-      // 15 条消息后断开连接
+      // 演示结束时，主动发一个 close 事件后结束连接。
       if (count >= 15) {
         clearInterval(interval);
         res.write('event: close\n');
@@ -47,13 +53,13 @@ const server = http.createServer((req, res) => {
       }
     }, 1000);
 
-    // 客户端断开连接时清理
+    // 如果客户端断开页面或关闭连接，要清理定时器。
     req.on('close', () => {
       clearInterval(interval);
       console.log('客户端断开连接');
     });
   }
-  // 处理静态文件请求
+  // 返回样式文件。
   else if (req.url === '/style.css') {
     const filePath = path.join(__dirname, 'style.css');
     fs.readFile(filePath, 'utf-8', (err, data) => {
@@ -66,7 +72,7 @@ const server = http.createServer((req, res) => {
       res.end(data);
     });
   }
-  // 提供 HTML 页面
+  // 返回首页 HTML。
   else if (req.url === '/' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(`
@@ -124,7 +130,10 @@ const server = http.createServer((req, res) => {
         </div>
 
         <script>
+          // 保存当前连接对象。
           let eventSource = null;
+
+          // 用来统计各种事件发生的次数。
           const stats = {
             welcome: 0,
             message: 0,
@@ -133,6 +142,7 @@ const server = http.createServer((req, res) => {
             close: 0
           };
 
+          // 建立连接。
           function connectSSE() {
             if (eventSource) {
               eventSource.close();
@@ -140,7 +150,7 @@ const server = http.createServer((req, res) => {
 
             eventSource = new EventSource('/api/sse');
 
-            // 监听连接打开
+            // onopen：连接建立成功。
             eventSource.onopen = () => {
               console.log('SSE 连接已打开');
               updateStatus(true);
@@ -148,42 +158,38 @@ const server = http.createServer((req, res) => {
               resetStats();
             };
 
-            // 监听欢迎事件
+            // 分别监听不同的自定义事件。
             eventSource.addEventListener('welcome', (event) => {
               stats.welcome++;
               addMessage('welcome', event.data);
               updateStats();
             });
 
-            // 监听消息事件
             eventSource.addEventListener('message', (event) => {
               stats.message++;
               addMessage('message', event.data);
               updateStats();
             });
 
-            // 监听通知事件
             eventSource.addEventListener('notification', (event) => {
               stats.notification++;
               addMessage('notification', event.data);
               updateStats();
             });
 
-            // 监听心跳事件
             eventSource.addEventListener('heartbeat', (event) => {
               stats.heartbeat++;
               addMessage('heartbeat', event.data);
               updateStats();
             });
 
-            // 监听关闭事件
             eventSource.addEventListener('close', (event) => {
               stats.close++;
               addMessage('close', event.data);
               updateStats();
             });
 
-            // 监听错误
+            // 连接异常处理。
             eventSource.onerror = (error) => {
               console.error('SSE 连接错误:', error);
               if (eventSource.readyState === EventSource.CLOSED) {
@@ -193,6 +199,7 @@ const server = http.createServer((req, res) => {
             };
           }
 
+          // 手动断开连接。
           function disconnectSSE() {
             if (eventSource) {
               eventSource.close();
@@ -202,23 +209,25 @@ const server = http.createServer((req, res) => {
             }
           }
 
+          // 在页面上追加一条消息。
           function addMessage(type, message) {
             const container = document.getElementById('allMessages');
             const messageEl = document.createElement('div');
             messageEl.className = 'message message-' + type;
-            messageEl.innerHTML = \`
-              <span class="message-time">[\${new Date().toLocaleTimeString()}]</span>
-              <span class="message-type">\${type}</span>
-              <span class="message-content">\${message}</span>
-            \`;
+            messageEl.innerHTML = \
+              `<span class="message-time">[${new Date().toLocaleTimeString()}]</span>\
+              <span class="message-type">${type}</span>\
+              <span class="message-content">${message}</span>`;
             container.appendChild(messageEl);
             container.scrollTop = container.scrollHeight;
           }
 
+          // 清空消息列表。
           function clearMessages() {
             document.getElementById('allMessages').innerHTML = '';
           }
 
+          // 更新页面上的连接状态文本和样式。
           function updateStatus(connected) {
             const statusDiv = document.getElementById('status');
             if (connected) {
@@ -230,6 +239,7 @@ const server = http.createServer((req, res) => {
             }
           }
 
+          // 把统计值同步显示到页面上。
           function updateStats() {
             document.getElementById('welcomeCount').textContent = stats.welcome;
             document.getElementById('messageCount').textContent = stats.message;
@@ -238,6 +248,7 @@ const server = http.createServer((req, res) => {
             document.getElementById('closeCount').textContent = stats.close;
           }
 
+          // 重置统计数据。
           function resetStats() {
             stats.welcome = 0;
             stats.message = 0;
@@ -247,7 +258,7 @@ const server = http.createServer((req, res) => {
             updateStats();
           }
 
-          // 页面卸载时关闭连接（最佳实践）
+          // 页面关闭前顺手断开连接，这是更稳妥的做法。
           window.addEventListener('beforeunload', () => {
             if (eventSource) {
               eventSource.close();
@@ -264,6 +275,7 @@ const server = http.createServer((req, res) => {
   }
 });
 
+// 启动服务，监听 3001 端口。
 const PORT = 3001;
 server.listen(PORT, () => {
   console.log(`SSE 最佳实践服务器运行在 http://localhost:${PORT}`);

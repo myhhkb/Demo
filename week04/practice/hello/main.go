@@ -1,14 +1,10 @@
-package main // 声明包名
+package main
 
-import "fmt" // 导入格式化输出包
+import "fmt"
 
-// main 函数是程序执行的入口
+// main 是最基础的 Go 程序入口。
+// 当执行 `go run main.go` 时，程序会从这里开始运行。
 func main() {
-    // 打印 Hello, Go! 到控制台
-    fmt.Println("yangchang")
+	// fmt.Println 会把内容输出到控制台，并自动换行。
+	fmt.Println("yangchang")
 }
-
-/*多行
-注释*/
-
-//单行注释

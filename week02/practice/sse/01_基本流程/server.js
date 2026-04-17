@@ -1,9 +1,14 @@
+// 引入 Node.js 内置模块。
+// - http: 用来创建 Web 服务器
+// - fs:   用来读文件
+// - path: 用来处理文件路径
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
+// 创建 HTTP 服务器。
 const server = http.createServer((req, res) => {
-  // 处理 client.js 请求
+  // 处理前端脚本 client.js 的请求。
   if (req.url === '/client.js') {
     const filePath = path.join(__dirname, 'client.js');
     fs.readFile(filePath, 'utf-8', (err, data) => {
@@ -12,13 +17,18 @@ const server = http.createServer((req, res) => {
         res.end('Not Found');
         return;
       }
+
       res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });
       res.end(data);
     });
   }
-  // 处理 SSE 连接
+  // 处理 SSE 长连接请求。
   else if (req.url === '/api/sse') {
-    // 设置 SSE 响应头
+    // 设置 SSE 所需响应头。
+    // 这些响应头的作用：
+    // - text/event-stream：告诉浏览器这不是普通响应，而是 SSE 数据流
+    // - no-cache：避免缓存
+    // - keep-alive：保持连接不断开
     res.writeHead(200, {
       'Content-Type': 'text/event-stream; charset=utf-8',
       'Cache-Control': 'no-cache',
@@ -26,28 +36,28 @@ const server = http.createServer((req, res) => {
       'Access-Control-Allow-Origin': '*'
     });
 
-    // 发送初始消息
+    // 先发送一条初始消息，表示连接已经建立成功。
     res.write('data: 连接成功\n\n');
 
-    // 模拟每秒发送一条消息
+    // 用定时器模拟服务器每秒推送一条消息。
     let count = 0;
     const interval = setInterval(() => {
       count++;
       res.write(`data: 这是第 ${count} 条消息\n\n`);
 
-      // 10 条消息后断开连接
+      // 推送 10 条后主动结束连接。
       if (count >= 10) {
         clearInterval(interval);
         res.end();
       }
     }, 1000);
 
-    // 客户端断开连接时清理
+    // 如果客户端提前断开连接，记得清理定时器，避免资源浪费。
     req.on('close', () => {
       clearInterval(interval);
     });
-  } 
-  // 提供静态 HTML 页面
+  }
+  // 处理首页请求，直接返回一个简单的演示 HTML 页面。
   else if (req.url === '/' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(`
@@ -108,27 +118,22 @@ const server = http.createServer((req, res) => {
         let eventSource = null;
 
         function connectSSE() {
-          // 如果已经连接，先断开
           if (eventSource) {
             eventSource.close();
           }
 
-          // 创建 EventSource 对象
           eventSource = new EventSource('/api/sse');
 
-          // 监听连接打开
           eventSource.onopen = () => {
             console.log('SSE 连接已打开');
             updateStatus(true);
           };
 
-          // 监听消息
           eventSource.onmessage = (event) => {
             console.log('收到消息:', event.data);
             addMessage(event.data);
           };
 
-          // 监听错误
           eventSource.onerror = (error) => {
             console.error('SSE 连接错误:', error);
             if (eventSource.readyState === EventSource.CLOSED) {
@@ -153,7 +158,6 @@ const server = http.createServer((req, res) => {
           messageEl.className = 'message';
           messageEl.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message;
           messagesDiv.appendChild(messageEl);
-          // 自动滚动到底部
           messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
@@ -170,13 +174,15 @@ const server = http.createServer((req, res) => {
       </script>
       </html>
     `);
-  } 
+  }
+  // 其他路径一律返回 404。
   else {
     res.writeHead(404);
     res.end('Not Found');
   }
 });
 
+// 指定服务运行端口。
 const PORT = 3000;
 server.listen(PORT, () => {
   console.log(`SSE 服务器运行在 http://localhost:${PORT}`);

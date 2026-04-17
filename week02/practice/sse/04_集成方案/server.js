@@ -1,26 +1,32 @@
 const http = require('http');
 const url = require('url');
 
+// 演示用 token。
+// 这里同时支持从 Header 或 URL 参数里读取它。
 const VALID_TOKEN = 'Bearer token-12345';
 
-const server = http.createServer((req, res) => {
+// 创建 HTTP 服务器。
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname;
 
-  // SSE 接口
+  // SSE 接口。
   if (pathname === '/api/sse') {
-    // 验证 token（从 Header 或 URL 参数）
+    // 同时支持两种取 token 的方式：
+    // 1. 从 Authorization 请求头里取
+    // 2. 从 URL 查询参数里取
+    // 这样可以兼容更多接入场景。
     const authHeader = req.headers.authorization;
     const tokenParam = parsedUrl.query.token;
     const token = authHeader || tokenParam;
 
+    // 先校验 token，未通过则拒绝建立连接。
     if (token !== VALID_TOKEN) {
       res.writeHead(401, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: '未授权' }));
       return;
     }
 
-    // 建立 SSE 连接
+    // 校验通过后，建立 SSE 长连接。
     res.writeHead(200, {
       'Content-Type': 'text/event-stream; charset=utf-8',
       'Cache-Control': 'no-cache',
@@ -34,7 +40,8 @@ const server = http.createServer((req, res) => {
     const interval = setInterval(() => {
       count++;
 
-      // 发送不同类型的事件
+      // 推送不同类型的业务事件。
+      // 真实项目里，前端通常会根据事件类型分别更新不同区域。
       if (count % 3 === 1) {
         res.write('event: 未读消息\n');
         res.write(`data: 您有 ${count} 条未读消息\n\n`);
@@ -52,7 +59,7 @@ const server = http.createServer((req, res) => {
       }
     }, 1000);
 
-    req.on('close', () => {
+    // 客户端关闭连接时，顺手把定时器清理掉。
       clearInterval(interval);
       console.log('❌ 客户端断开连接');
     });
@@ -232,14 +239,20 @@ const server = http.createServer((req, res) => {
 
         <script>
           let eventSource = null;
+
+          // 这里直接写死一个演示 token。
+          // 真实项目中，通常会从登录接口或本地存储中获取。
           const token = 'Bearer token-12345';
 
-          function connectSSE() {
+          // connectSSE 使用 EventSource Polyfill 发起连接。
+          // 这样就可以像普通请求一样携带自定义请求头。
             if (eventSource) {
               eventSource.close();
             }
 
-            // 使用 EventSourcePolyfill 支持自定义 Header
+            // EventSourcePolyfill 的优势是：
+            // 原生 EventSource 不方便设置自定义 Header，
+            // 而 polyfill 可以把 Authorization 这样的头带给后端。
             eventSource = new EventSourcePolyfill('/api/sse', {
               headers: {
                 'Authorization': token

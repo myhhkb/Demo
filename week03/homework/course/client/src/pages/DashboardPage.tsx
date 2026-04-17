@@ -17,6 +17,7 @@ import {
 } from 'recharts';
 import { dashboardApi, DashboardData } from '../api';
 
+// extractTechName 用来把较长的课程名称提炼成更适合图表显示的短名称。
 function extractTechName(name: string): string {
   const techMap: Record<string, string> = {
     React: 'React',
@@ -34,17 +35,23 @@ function extractTechName(name: string): string {
     MongoDB: 'MongoDB',
   };
 
+  // 如果名称中包含某个熟悉的技术关键词，就直接返回更短的展示名称。
   for (const key of Object.keys(techMap)) {
     if (name.includes(key)) return techMap[key];
   }
 
+  // 如果没有匹配到关键词，就默认取第一个单词。
   return name.split(' ')[0];
 }
 
 const DashboardPage: React.FC = () => {
+  // data 保存后端返回的整个工作台数据。
   const [data, setData] = useState<DashboardData | null>(null);
+
+  // loading 表示数据是否仍在加载中。
   const [loading, setLoading] = useState(true);
 
+  // 页面首次加载时，请求工作台数据。
   useEffect(() => {
     dashboardApi
       .getDashboard()
@@ -59,6 +66,7 @@ const DashboardPage: React.FC = () => {
       });
   }, []);
 
+  // 数据加载中时，显示一个居中的加载动画。
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -67,28 +75,34 @@ const DashboardPage: React.FC = () => {
     );
   }
 
+  // 如果加载结束但没有数据，显示失败提示。
   if (!data) return <div>加载失败</div>;
 
+  // 计算课程发布率。
   const publishRate =
     data.stats.totalCourses > 0
       ? Math.round((data.stats.publishedCourses / data.stats.totalCourses) * 100)
       : 0;
+
+  // 计算学生活跃率。
   const activeRate =
     data.stats.totalStudents > 0
       ? Math.round((data.stats.activeStudents / data.stats.totalStudents) * 100)
       : 0;
 
+  // 图表颜色配置。
   const COLORS = ['#5B9BD5', '#ED7D31', '#A5A5A5', '#FFC000', '#70AD47', '#4472C4'];
   const STATUS_COLORS = ['#5B9BD5', '#ED7D31'];
 
+  // 给选课人数柱状图增加一个 shortName 字段，方便横坐标展示。
   const enrollmentData = data.charts.enrollment.map((item) => ({
     ...item,
     shortName: extractTechName(item.name),
   }));
 
-  // 折线图数据：学习人数和学习时长
-  // - students: 当天学习人数
-  // - duration: 当天学习时长（小时）
+  // 规范折线图数据，确保 students 和 duration 一定是数字。
+  // - students：学习人数
+  // - duration：学习时长（小时）
   const activityData = data.charts.activity.map((item) => {
     const students = Number(item.students || 0);
     const duration = Number(item.duration || 0);
@@ -105,6 +119,7 @@ const DashboardPage: React.FC = () => {
         工作台
       </h1>
 
+      {/* 顶部四个统计卡片 */}
       <div className="grid grid-cols-4 gap-4">
         <div className="border-2 rounded-lg p-6" style={{ borderColor: '#D0D0D0', backgroundColor: '#FFFFFF' }}>
           <div className="flex items-center gap-3 mb-4">
@@ -149,7 +164,9 @@ const DashboardPage: React.FC = () => {
         </div>
       </div>
 
+      {/* 下方图表区域 */}
       <div className="grid grid-cols-2 gap-4">
+        {/* 柱状图：课程选课人数 TOP 8 */}
         <div className="border-2 rounded-lg p-6" style={{ borderColor: '#D0D0D0', borderStyle: 'dashed', backgroundColor: '#FAFAFA' }}>
           <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#333333', marginBottom: '16px' }}>
             课程选课人数 TOP 8
@@ -176,6 +193,7 @@ const DashboardPage: React.FC = () => {
           </ResponsiveContainer>
         </div>
 
+        {/* 折线图：近 7 天活跃度 */}
         <div className="border-2 rounded-lg p-6" style={{ borderColor: '#D0D0D0', borderStyle: 'dashed', backgroundColor: '#FAFAFA' }}>
           <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#333333', marginBottom: '16px' }}>
             近7天学习活跃度
@@ -217,6 +235,7 @@ const DashboardPage: React.FC = () => {
           </ResponsiveContainer>
         </div>
 
+        {/* 环形图：学生状态分布 */}
         <div className="border-2 rounded-lg p-6" style={{ borderColor: '#D0D0D0', borderStyle: 'dashed', backgroundColor: '#FAFAFA' }}>
           <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#333333', marginBottom: '16px' }}>
             学生状态分布
@@ -244,6 +263,7 @@ const DashboardPage: React.FC = () => {
           </ResponsiveContainer>
         </div>
 
+        {/* 环形图：课程分类分布 */}
         <div className="border-2 rounded-lg p-6" style={{ borderColor: '#D0D0D0', borderStyle: 'dashed', backgroundColor: '#FAFAFA' }}>
           <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#333333', marginBottom: '16px' }}>
             课程分类分布

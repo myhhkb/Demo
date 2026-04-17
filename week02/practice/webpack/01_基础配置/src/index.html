@@ -1,11 +1,25 @@
 <!DOCTYPE html>
+<!--
+  这是 Webpack 基础配置示例的 HTML 模板文件。
+  页面本身很简单，只保留一个根节点，
+  具体内容会由 src/index.js 动态插入。
+-->
 <html lang="zh-CN">
 <head>
+  <!-- 设置字符编码，保证中文正常显示 -->
   <meta charset="UTF-8">
+
+  <!-- 设置移动端视口，保证响应式布局正常工作 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- 浏览器标签页标题 -->
   <title>Webpack 基础配置</title>
 </head>
 <body>
+  <!--
+    app 是页面挂载点。
+    JavaScript 会找到这个元素，然后把页面内容渲染进来。
+  -->
   <div id="app"></div>
 </body>
 </html>

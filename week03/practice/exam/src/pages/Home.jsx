@@ -2,22 +2,30 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Home.css'
 
+// Home 是考试应用的首页组件。
+// 用户会先在这里点击“开始考试”，然后查看考试须知。
 function Home() {
   const navigate = useNavigate()
+
+  // showNotice 控制是否显示“考试须知”弹层内容。
   const [showNotice, setShowNotice] = useState(false)
 
+  // 点击“开始考试”后，先展示考试须知。
   const handleStart = () => {
     setShowNotice(true)
   }
 
+  // 点击“继续考试”后，跳转到正式答题页。
   const handleContinue = () => {
     navigate('/exam')
   }
 
+  // 点击“退出考试”后，回到首页初始状态。
   const handleExit = () => {
     setShowNotice(false)
   }
 
+  // 如果还没有显示考试须知，就先显示欢迎卡片。
   if (!showNotice) {
     return (
       <div className="home-container">
@@ -31,6 +39,7 @@ function Home() {
     )
   }
 
+  // 如果 showNotice 为 true，就显示考试须知界面。
   return (
     <div className="home-container">
       <div className="notice-card">

@@ -1,13 +1,18 @@
 const http = require('http');
 
-// 模拟的有效 token
+// VALID_TOKEN 是演示用的固定 token。
+// 真实项目里通常会在登录成功后动态生成，而不是写死在代码里。
 const VALID_TOKEN = 'user-token-12345';
 
-const server = http.createServer((req, res) => {
-  // 处理登录接口 - 设置 Cookie
+// 创建 HTTP 服务器。
+// 下面会根据不同路径，分别处理登录、SSE、登出和页面返回。
+  // 处理登录接口：登录成功后，把 token 写入 Cookie。
   if (req.url === '/login' && req.method === 'POST') {
     res.writeHead(200, {
       'Content-Type': 'application/json; charset=utf-8',
+
+      // Set-Cookie 会让浏览器自动保存 token。
+      // HttpOnly 表示前端 JavaScript 不能直接读取这个 Cookie，更安全一些。
       'Set-Cookie': `token=${VALID_TOKEN}; Path=/; HttpOnly`
     });
     res.end(JSON.stringify({
@@ -15,14 +20,16 @@ const server = http.createServer((req, res) => {
       message: '登录成功，Token 已设置到 Cookie'
     }));
   }
-  // 处理 SSE 连接
+  // 处理 SSE 请求。
   else if (req.url === '/api/sse' && req.method === 'GET') {
-    // 从 Cookie 中提取 token
+    // 浏览器请求时会自动把当前域名下的 Cookie 带上。
     const cookies = req.headers.cookie || '';
+
+    // 从 Cookie 字符串中提取 token。
     const tokenMatch = cookies.match(/token=([^;]*)/);
     const token = tokenMatch ? tokenMatch[1] : null;
 
-    // 验证 token
+    // 先校验 token，只有已登录用户才能建立 SSE 长连接。
     if (token !== VALID_TOKEN) {
       res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({
@@ -32,7 +39,7 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    // Token 验证成功，建立 SSE 连接
+    // Token 验证成功后，才真正建立 SSE 连接。
     res.writeHead(200, {
       'Content-Type': 'text/event-stream; charset=utf-8',
       'Cache-Control': 'no-cache',
@@ -42,7 +49,7 @@ const server = http.createServer((req, res) => {
 
     console.log('✅ 客户端已认证，建立 SSE 连接');
 
-    // 发送欢迎消息
+    // 先发一条欢迎消息，告诉前端认证已经成功。
     res.write('data: 认证成功，连接已建立\n\n');
 
     let count = 0;
@@ -50,21 +57,24 @@ const server = http.createServer((req, res) => {
       count++;
       res.write(`data: [认证用户] 消息 ${count}\n\n`);
 
+      // 演示用：推送 10 条后主动结束连接。
       if (count >= 10) {
         clearInterval(interval);
         res.end();
       }
     }, 1000);
 
-    req.on('close', () => {
+    // 客户端断开时记得清理定时器。
       clearInterval(interval);
       console.log('❌ 客户端断开连接');
     });
   }
-  // 处理登出接口 - 清除 Cookie
+  // 处理登出接口：通过清空 Cookie 来实现退出登录。
   else if (req.url === '/logout' && req.method === 'POST') {
     res.writeHead(200, {
       'Content-Type': 'application/json; charset=utf-8',
+
+      // 把 Cookie 过期时间设置为过去，相当于让浏览器删除它。
       'Set-Cookie': 'token=; Path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC'
     });
     res.end(JSON.stringify({
@@ -330,6 +340,8 @@ const server = http.createServer((req, res) => {
         <script>
           let eventSource = null;
 
+          // login 会请求后端登录接口。
+          // 登录成功后，后端会把 token 写进 Cookie，浏览器之后会自动携带这个 Cookie。
           async function login() {
             try {
               const response = await fetch('/login', {
@@ -359,6 +371,7 @@ const server = http.createServer((req, res) => {
               const data = await response.json();
               
               if (response.ok) {
+                // 登出后除了更新状态，还顺便断开 SSE 连接。
                 updateAuthStatus(false, '已登出');
                 disconnectSSE();
                 console.log('✅ 登出成功');
@@ -368,7 +381,8 @@ const server = http.createServer((req, res) => {
             }
           }
 
-          function connectSSE() {
+          // connectSSE 会发起 EventSource 请求。
+          // 因为 token 已经保存在 Cookie 里，所以浏览器会自动把它带给后端。
             if (eventSource) {
               eventSource.close();
             }
@@ -406,7 +420,7 @@ const server = http.createServer((req, res) => {
           function addMessage(message) {
             const container = document.getElementById('messages');
             
-            // 如果是第一条消息，清空占位符
+            // 如果当前还是占位提示，说明这是第一条真正的消息，先清空占位内容。
             if (container.querySelector('.empty-message')) {
               container.innerHTML = '';
             }
@@ -418,7 +432,7 @@ const server = http.createServer((req, res) => {
             container.scrollTop = container.scrollHeight;
           }
 
-          function clearMessages() {
+          // clearMessages 用来把消息区域恢复成初始状态。
             const container = document.getElementById('messages');
             container.innerHTML = '<div class="empty-message">等待消息...</div>';
           }

@@ -1,10 +1,15 @@
 import axios, { AxiosInstance } from 'axios';
 
+// 创建 axios 实例，统一配置接口请求行为。
 const api: AxiosInstance = axios.create({
+  // 所有请求默认都会拼接到 /api 下。
   baseURL: '/api',
+
+  // 超时时间设置为 10 秒。
   timeout: 10000,
 });
 
+// 请求拦截器：每次发送请求前，自动把 token 带上。
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -13,13 +18,18 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// 响应拦截器：统一处理接口返回结果和错误。
 api.interceptors.response.use(
+  // 成功时，直接返回 response.data，减少页面层的取值层级。
   (response) => response.data,
   (error) => {
     const status = error.response?.status;
     const requestUrl = error.config?.url || '';
 
-    // 登录接口返回 401 时，不做全局跳转，让页面自己提示“用户名或密码错误”
+    // 如果除了登录接口以外的请求返回 401，
+    // 说明当前 token 失效，需要清掉 token 并跳回登录页。
+    // 但登录接口自己返回 401 时，不要全局跳转，
+    // 因为登录页自己要显示“用户名或密码错误”。
     if (status === 401 && !requestUrl.includes('/auth/login')) {
       localStorage.removeItem('token');
       window.location.href = '/login';
@@ -29,12 +39,14 @@ api.interceptors.response.use(
   }
 );
 
+// 通用接口响应结构。
 export interface ApiResponse<T = any> {
   code: number;
   msg: string;
   data: T;
 }
 
+// 用户类型定义。
 export interface User {
   id: number;
   username: string;
@@ -44,6 +56,7 @@ export interface User {
   created_at: string;
 }
 
+// 课程类型定义。
 export interface Course {
   id: number;
   name: string;
@@ -58,6 +71,7 @@ export interface Course {
   updated_at: string;
 }
 
+// 学生类型定义。
 export interface Student {
   id: number;
   name: string;
@@ -72,6 +86,7 @@ export interface Student {
   updated_at: string;
 }
 
+// 仪表盘数据类型定义。
 export interface DashboardData {
   stats: {
     totalCourses: number;
@@ -87,21 +102,24 @@ export interface DashboardData {
   };
 }
 
-// Auth
+// ---------------- Auth 模块接口 ----------------
 export const authApi = {
+  // 登录接口。
   login: (username: string, password: string) =>
     api.post<any, ApiResponse<{ token: string; user: User }>>('/auth/login', { username, password }),
+
+  // 获取当前登录用户信息。
   getMe: () =>
     api.get<any, ApiResponse<User>>('/auth/me'),
 };
 
-// Dashboard
+// ---------------- Dashboard 模块接口 ----------------
 export const dashboardApi = {
   getDashboard: () =>
     api.get<any, ApiResponse<DashboardData>>('/dashboard'),
 };
 
-// Courses
+// ---------------- Courses 模块接口 ----------------
 export const coursesApi = {
   getCourses: (params: any) =>
     api.get<any, ApiResponse<{ list: Course[]; total: number; page: number; pageSize: number }>>('/courses', { params }),
@@ -119,7 +137,7 @@ export const coursesApi = {
     api.patch<any, ApiResponse<Course>>(`/courses/${id}/status`),
 };
 
-// Students
+// ---------------- Students 模块接口 ----------------
 export const studentsApi = {
   getStudents: (params: any) =>
     api.get<any, ApiResponse<{ list: Student[]; total: number; page: number; pageSize: number }>>('/students', { params }),
@@ -135,7 +153,7 @@ export const studentsApi = {
     api.delete<any, ApiResponse<null>>(`/students/${id}`),
 };
 
-// Summary
+// ---------------- Summary 模块接口 ----------------
 export const summaryApi = {
   getSummary: () =>
     api.get<any, ApiResponse<{ content: string }>>('/summary'),

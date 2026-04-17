@@ -1,9 +1,15 @@
+// 先引入样式文件，让当前页面有更完整的视觉效果。
 import './style.css';
 
+// 在控制台中打印提示，方便开发时确认脚本已经运行。
 console.log('🚀 Webpack 高级配置 - 代码分割和懒加载');
 
+// 获取页面根节点，后面所有内容都会动态插入到这里。
 const app = document.getElementById('app');
 
+// 先渲染基础页面结构。
+// 注意：这里并没有一开始就把所有功能代码都打包进来，
+// 真正的模块内容会在用户点击按钮后再按需加载。
 app.innerHTML = `
   <div class="container">
     <h1>✨ Webpack 高级配置</h1>
@@ -28,13 +34,16 @@ app.innerHTML = `
   </div>
 `;
 
-// 懒加载模块 A
+// 懒加载模块 A。
+// 点击按钮后，浏览器才会去加载 moduleA.js 对应的代码块。
 document.getElementById('loadA').addEventListener('click', async () => {
   const result = document.getElementById('result');
   result.innerHTML = '⏳ 加载中...';
   
   try {
+    // import() 是动态导入语法，会返回一个 Promise。
     const { moduleA, heavyCalculation } = await import('./moduleA.js');
+
     result.innerHTML = `
       <div class="success">
         <p>✅ 模块 A 加载成功</p>
@@ -47,13 +56,15 @@ document.getElementById('loadA').addEventListener('click', async () => {
   }
 });
 
-// 懒加载模块 B
+// 懒加载模块 B。
 document.getElementById('loadB').addEventListener('click', async () => {
   const result = document.getElementById('result');
   result.innerHTML = '⏳ 加载中...';
   
   try {
     const { moduleB, processData } = await import('./moduleB.js');
+
+    // 这里顺便演示加载后立即调用模块中的函数处理数据。
     const data = processData([1, 2, 3, 4, 5]);
     result.innerHTML = `
       <div class="success">
@@ -67,7 +78,8 @@ document.getElementById('loadB').addEventListener('click', async () => {
   }
 });
 
-// 同时加载两个模块
+// 同时加载两个模块。
+// Promise.all 表示“等两个异步任务都完成后再继续”。
 document.getElementById('loadBoth').addEventListener('click', async () => {
   const result = document.getElementById('result');
   result.innerHTML = '⏳ 加载中...';

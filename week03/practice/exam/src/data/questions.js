@@ -1,3 +1,9 @@
+// questions 是考试题库数据。
+// 每道题都包含：
+// - id：题目编号
+// - question：题干
+// - options：选项列表
+// - correct：正确答案对应的选项 id
 export const questions = [
   {
     id: 1,

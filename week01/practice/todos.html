@@ -1,46 +1,86 @@
 <!DOCTYPE html>
+<!--
+  这是一个“获取并渲染 Todo 列表”的练习页面。
+  页面加载完成后，会向远程接口请求待办数据，
+  然后把每一条 Todo 动态渲染到页面中。
+-->
 <html lang="zh-CN">
 
 <head>
+    <!-- 设置字符编码，避免中文乱码 -->
     <meta charset="UTF-8">
+
+    <!-- 设置移动端视口，保证页面在不同设备上显示正常 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 页面标题 -->
     <title>Fetch and Render Todos</title>
+
+    <!-- 引入 Tailwind CSS，方便快速使用工具类进行页面排版 -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
 <body class="min-h-screen bg-slate-100">
+    <!--
+      外层容器：
+      - max-w-3xl：设置最大宽度
+      - mx-auto：水平居中
+      - py-10 px-4：设置上下和左右内边距
+    -->
     <div class="max-w-3xl mx-auto py-10 px-4">
+        <!-- 页面主标题 -->
         <h1 class="text-2xl font-bold mb-6 text-slate-800">Todos 列表</h1>
+
+        <!--
+          Todo 列表容器。
+          后面 JavaScript 会把创建好的 li 元素依次插入到这里。
+        -->
         <ul id="todoList" class="space-y-2"></ul>
     </div>
 
     <script>
+        // DOMContentLoaded 表示“HTML 结构已经加载完成”。
+        // 等到这个时机再执行脚本，可以确保页面元素已经可以被获取到。
         document.addEventListener('DOMContentLoaded', () => {
+            // fetch 用来向接口发送网络请求。
+            // 这里请求的是一个公开测试接口，返回 Todo 数据。
             fetch('https://jsonplaceholder.typicode.com/todos')
                .then(response => response.json())
                .then(data => {
+                    // 获取页面中的 ul 容器。
                     const todoList = document.getElementById('todoList');
+
+                    // 遍历接口返回的每一条 todo 数据。
                     data.forEach(todo => {
+                        // 创建一条列表项 li。
                         const listItem = document.createElement('li');
                         listItem.className = "flex items-center justify-between rounded-lg bg-white px-4 py-2 shadow-sm";
 
+                        // 左侧标题文本。
                         const titleSpan = document.createElement('span');
                         titleSpan.textContent = todo.title;
                         titleSpan.className = "text-slate-700";
 
+                        // 右侧状态标签。
                         const statusSpan = document.createElement('span');
                         statusSpan.textContent = todo.completed ? '已完成' : '未完成';
+
+                        // 根据 completed 的真假，给状态标签设置不同的样式。
                         statusSpan.className = todo.completed
                             ? "text-xs font-medium px-2 py-1 rounded-full bg-emerald-100 text-emerald-700"
                             : "text-xs font-medium px-2 py-1 rounded-full bg-amber-100 text-amber-700";
 
+                        // 把左右两个内容都塞进 li 中。
                         listItem.appendChild(titleSpan);
                         listItem.appendChild(statusSpan);
 
+                        // 最后把 li 放进 ul 列表容器里。
                         todoList.appendChild(listItem);
                     });
                 })
                .catch(error => {
+                    // 如果请求失败，就把错误打印到控制台。
+                    // 这是最基础的错误处理方式，方便开发阶段排查问题。
                     console.error('Error:', error);
                 });
         });

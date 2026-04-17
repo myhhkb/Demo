@@ -1,6 +1,10 @@
 import db from './db.js';
 import bcrypt from 'bcryptjs';
 
+// initDatabase 负责：
+// 1. 创建项目所需的数据表
+// 2. 插入初始模拟数据
+// 3. 补齐最近 7 天的学习记录
 export function initDatabase() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -51,19 +55,27 @@ export function initDatabase() {
     );
   `);
 
+  // 表结构准备好后，插入初始化数据。
   seedData();
+
+  // 再额外确保最近 7 天学习记录是完整的。
   backfillRecentLearningRecords();
 }
 
+// seedData 用来向空数据库中插入一批演示数据。
 function seedData() {
   const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
+
+  // 如果已经有用户数据，说明数据库不是空的，就不重复灌入了。
   if (userCount > 0) return;
 
+  // 创建默认管理员账号：admin / admin123
   const hashedPassword = bcrypt.hashSync('admin123', 10);
   db.prepare(`
     INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)
   `).run('admin', hashedPassword, '管理员', 'admin');
 
+  // 预置课程数据。
   const courses = [
     { name: 'React 基础入门', description: '从零开始学习 React 框架，掌握组件化开发思想', instructor: '张老师', category: '前端开发', status: 'published', student_count: 32, lesson_count: 12 },
     { name: 'Node.js 服务端开发', description: '学习 Node.js 构建高性能服务端应用', instructor: '李老师', category: '后端开发', status: 'published', student_count: 28, lesson_count: 10 },
@@ -89,6 +101,7 @@ function seedData() {
     insertCourse.run(course);
   }
 
+  // 预置班级名称和学生姓名。
   const classNames = ['前端2401班', '前端2402班', '后端2401班', '全栈2401班'];
   const studentNames = [
     '陈明远', '林小雨', '张伟杰', '刘思琪', '王大力',
@@ -102,9 +115,11 @@ function seedData() {
     VALUES (@name, @student_no, @class_name, @phone, @email, @status, @course_ids)
   `);
 
+  // 批量生成学生数据，并随机分配课程。
   for (let i = 0; i < studentNames.length; i++) {
     const courseCount = Math.floor(Math.random() * 3) + 1;
     const courseIds = [];
+
     while (courseIds.length < courseCount) {
       const id = Math.floor(Math.random() * 12) + 1;
       if (!courseIds.includes(id)) courseIds.push(id);
@@ -121,6 +136,7 @@ function seedData() {
     });
   }
 
+  // 插入学习记录模拟数据。
   const insertRecord = db.prepare(`
     INSERT INTO learning_records (student_id, course_id, date, duration)
     VALUES (@student_id, @course_id, @date, @duration)
@@ -146,6 +162,7 @@ function seedData() {
   console.log('Mock 数据初始化完成');
 }
 
+// backfillRecentLearningRecords 用来补齐最近 7 天没有数据的学习记录。
 function backfillRecentLearningRecords() {
   const studentRows = db.prepare('SELECT id FROM students').all();
   const courseRows = db.prepare('SELECT id FROM courses').all();
@@ -167,6 +184,7 @@ function backfillRecentLearningRecords() {
     date.setDate(date.getDate() - dayOffset);
     const dateStr = date.toISOString().split('T')[0];
 
+    // 某一天只要已有记录，就不再重复补数据。
     const existingCount = countByDateStmt.get(dateStr).count;
     if (existingCount > 0) continue;
 

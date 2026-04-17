@@ -1,9 +1,17 @@
+/*
+  全局重置：
+  让所有元素从统一的默认样式开始，避免浏览器默认样式差异带来干扰。
+*/
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/*
+  页面整体背景和基础排版。
+  这里使用了渐变背景，让示例页面更容易观察效果。
+*/
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -11,6 +19,12 @@ body {
   padding: 20px;
 }
 
+/*
+  页面主容器：
+  - 控制最大宽度
+  - 水平居中
+  - 白色卡片背景
+*/
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -20,6 +34,7 @@ body {
   overflow: hidden;
 }
 
+/* 页面主标题样式 */
 h1 {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -29,6 +44,7 @@ h1 {
   margin: 0;
 }
 
+/* 二级标题样式 */
 h2 {
   color: #333;
   font-size: 18px;
@@ -37,6 +53,7 @@ h2 {
   padding-top: 20px;
 }
 
+/* 顶部控制区：放状态和按钮 */
 .control-panel {
   display: flex;
   align-items: center;
@@ -47,6 +64,7 @@ h2 {
   flex-wrap: wrap;
 }
 
+/* 状态块的通用样式 */
 .status {
   padding: 10px 20px;
   border-radius: 6px;
@@ -55,18 +73,21 @@ h2 {
   text-align: center;
 }
 
+/* 已连接状态 */
 .status.connected {
   background-color: #d4edda;
   color: #155724;
   border: 1px solid #c3e6cb;
 }
 
+/* 未连接状态 */
 .status.disconnected {
   background-color: #f8d7da;
   color: #721c24;
   border: 1px solid #f5c6cb;
 }
 
+/* 按钮通用样式 */
 .btn {
   padding: 10px 20px;
   border: none;
@@ -77,6 +98,7 @@ h2 {
   transition: all 0.3s ease;
 }
 
+/* 连接按钮 */
 .btn-connect {
   background: #28a745;
   color: white;
@@ -88,6 +110,7 @@ h2 {
   box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
 }
 
+/* 断开按钮 */
 .btn-disconnect {
   background: #dc3545;
   color: white;
@@ -99,6 +122,7 @@ h2 {
   box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
 }
 
+/* 清空按钮 */
 .btn-clear {
   background: #6c757d;
   color: white;
@@ -110,6 +134,10 @@ h2 {
   box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
 }
 
+/*
+  内容区使用两列布局：
+  左边放消息，右边放统计。
+*/
 .content {
   display: grid;
   grid-template-columns: 1fr 300px;
@@ -117,6 +145,7 @@ h2 {
   padding: 20px;
 }
 
+/* 小屏幕时改成单列，提升移动端可读性 */
 @media (max-width: 768px) {
   .content {
     grid-template-columns: 1fr;
@@ -128,6 +157,7 @@ h2 {
   flex-direction: column;
 }
 
+/* 消息容器：固定高度 + 可滚动 */
 .messages-container {
   flex: 1;
   border: 1px solid #e9ecef;
@@ -138,6 +168,7 @@ h2 {
   background: #fafbfc;
 }
 
+/* 单条消息样式 */
 .message {
   padding: 10px 12px;
   margin-bottom: 8px;
@@ -149,6 +180,7 @@ h2 {
   animation: slideIn 0.3s ease;
 }
 
+/* 消息进入动画 */
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -160,12 +192,14 @@ h2 {
   }
 }
 
+/* 消息时间 */
 .message-time {
   color: #999;
   font-weight: 600;
   min-width: 90px;
 }
 
+/* 消息类型标签 */
 .message-type {
   background: #e9ecef;
   padding: 2px 8px;
@@ -176,11 +210,13 @@ h2 {
   font-size: 12px;
 }
 
+/* 消息正文 */
 .message-content {
   flex: 1;
   color: #333;
 }
 
+/* 不同事件对应不同颜色，方便区分 */
 .message-welcome {
   background: #d1ecf1;
   border-left-color: #0c5460;
@@ -236,6 +272,7 @@ h2 {
   flex-direction: column;
 }
 
+/* 统计面板外框 */
 .stats {
   border: 1px solid #e9ecef;
   border-radius: 8px;
@@ -243,6 +280,7 @@ h2 {
   background: #fafbfc;
 }
 
+/* 单条统计项 */
 .stat-item {
   display: flex;
   justify-content: space-between;
@@ -255,12 +293,14 @@ h2 {
   border-bottom: none;
 }
 
+/* 左侧统计名称 */
 .stat-label {
   font-size: 13px;
   color: #666;
   font-weight: 600;
 }
 
+/* 右侧统计数值 */
 .stat-value {
   font-size: 18px;
   font-weight: 700;
@@ -272,7 +312,7 @@ h2 {
   text-align: center;
 }
 
-/* 滚动条美化 */
+/* 滚动条美化，让消息区滚动更精致一些 */
 .messages-container::-webkit-scrollbar {
   width: 8px;
 }

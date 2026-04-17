@@ -7,25 +7,32 @@ import CoursesPage from './CoursesPage';
 import StudentsPage from './StudentsPage';
 import SummaryPage from './SummaryPage';
 
+// LayoutPage 接收当前登录用户信息，
+// 用来显示顶部头像、用户名，以及主系统界面。
 interface LayoutPageProps {
   user: User;
 }
 
 const LayoutPage: React.FC<LayoutPageProps> = ({ user }) => {
+  // collapsed 控制左侧边栏是展开还是收起。
   const [collapsed, setCollapsed] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
 
+  // 退出登录：清空 token，并跳回登录页。
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
   };
 
+  // 根据当前地址，计算左侧菜单应该高亮哪一项。
   const getSelectedKey = () => {
     if (location.pathname === '/') return '/';
     return location.pathname;
   };
 
+  // 顶部右上角用户下拉菜单。
   const userMenu = (
     <Menu>
       <Menu.Item key="profile" disabled>
@@ -38,6 +45,7 @@ const LayoutPage: React.FC<LayoutPageProps> = ({ user }) => {
     </Menu>
   );
 
+  // 左侧导航菜单配置。
   const menuItems = [
     {
       key: '/',
@@ -65,11 +73,12 @@ const LayoutPage: React.FC<LayoutPageProps> = ({ user }) => {
     },
   ];
 
+  // 根据边栏收缩状态动态计算主区域左边距。
   const siderWidth = collapsed ? 80 : 160;
 
   return (
     <Layout className="min-h-screen" style={{ backgroundColor: '#F5F5F5' }}>
-      {/* 侧边栏 */}
+      {/* 左侧固定边栏 */}
       <Layout.Sider
         trigger={null}
         collapsible
@@ -88,7 +97,7 @@ const LayoutPage: React.FC<LayoutPageProps> = ({ user }) => {
           overflow: 'auto',
         }}
       >
-        {/* Logo 区域 */}
+        {/* Logo / 平台名称区域 */}
         <div className="p-4 border-b" style={{ borderColor: '#E0E0E0' }}>
           <div className="flex items-center justify-center gap-2">
             <span style={{ fontSize: '20px' }}>🎓</span>
@@ -104,7 +113,7 @@ const LayoutPage: React.FC<LayoutPageProps> = ({ user }) => {
           </div>
         </div>
 
-        {/* 菜单 */}
+        {/* 左侧菜单列表 */}
         <div style={{ paddingTop: '8px' }}>
           {menuItems.map((item) => (
             <div
@@ -143,13 +152,14 @@ const LayoutPage: React.FC<LayoutPageProps> = ({ user }) => {
         </div>
       </Layout.Sider>
 
+      {/* 右侧主体布局 */}
       <Layout
         style={{
           marginLeft: siderWidth,
           transition: 'margin-left 0.2s ease',
         }}
       >
-        {/* 顶栏 */}
+        {/* 顶部导航栏 */}
         <Layout.Header
           style={{
             backgroundColor: '#FFFFFF',
@@ -161,6 +171,7 @@ const LayoutPage: React.FC<LayoutPageProps> = ({ user }) => {
             height: '64px',
           }}
         >
+          {/* 左上角收起/展开按钮 */}
           <Button
             type="text"
             onClick={() => setCollapsed(!collapsed)}
@@ -172,6 +183,7 @@ const LayoutPage: React.FC<LayoutPageProps> = ({ user }) => {
             ☰
           </Button>
 
+          {/* 右上角用户信息和下拉菜单 */}
           <Dropdown overlay={userMenu} trigger={['click']}>
             <div
               style={{
@@ -197,7 +209,7 @@ const LayoutPage: React.FC<LayoutPageProps> = ({ user }) => {
           </Dropdown>
         </Layout.Header>
 
-        {/* 主体内容 */}
+        {/* 页面内容区域 */}
         <Layout.Content
           style={{
             padding: '24px',
@@ -205,6 +217,7 @@ const LayoutPage: React.FC<LayoutPageProps> = ({ user }) => {
             minHeight: 'calc(100vh - 64px)',
           }}
         >
+          {/* 子页面路由 */}
           <Routes>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/courses" element={<CoursesPage />} />
