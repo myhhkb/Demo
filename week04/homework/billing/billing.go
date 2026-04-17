@@ -38,7 +38,7 @@ const (
 // 这里主要用于打印程序启动时的说明信息。
 func init() {
 	fmt.Printf("计费规则版本号: %s\n", ruleVersion)
-	fmt.Printf("系统初始化时间: %s\n", time.Now().Format("2026-04-013 15:04:05"))
+	fmt.Printf("系统初始化时间: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 }
 
 // main 是 Go 程序的入口函数。
