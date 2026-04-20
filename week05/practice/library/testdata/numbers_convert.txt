@@ -1,0 +1,9 @@
+42	0x2a	101010
+42	0x2a	101010
+42	0x2a	101010
+-10	0x-a	-1010
+255	0xff	11111111
+255	0xff	11111111
+1000	0x3e8	1111101000
+10	0xa	1010
+not_a_number	(无法解析为整数: strconv.ParseInt: parsing "not_a_number": invalid syntax)

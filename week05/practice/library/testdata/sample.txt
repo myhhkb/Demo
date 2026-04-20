@@ -1,0 +1,4 @@
+Hello from library CLI.
+This file is for count and upper tests.
+Line 3 mixes ASCII and 中文 to show byte vs rune counts.
+abc123 XYZ
