@@ -17,15 +17,21 @@ import (
 )
 
 const (
+	// defaultConfigPath 是默认配置文件名；运行时也可以用 --config 指定其他 JSON 文件。
 	defaultConfigPath = "config.json"
+	// defaultTimeoutSec 是单个目标默认最多等待的秒数，避免慢服务一直阻塞。
 	defaultTimeoutSec = 3
-	maxRetryCount     = 3
+	// maxRetryCount 限制最大重试次数，防止配置写错后无限重试。
+	maxRetryCount = 3
 )
 
+// Config 对应 config.json 的整体结构，targets 数组里放所有探测目标。
 type Config struct {
 	Targets []Target `json:"targets"`
 }
 
+// Target 表示一个需要探测的服务。
+// HTTP 目标通常填写完整 URL；TCP 目标通常填写 host:port。
 type Target struct {
 	Name           string `json:"name"`
 	Address        string `json:"address"`
@@ -35,6 +41,7 @@ type Target struct {
 	RetryCount     int    `json:"retry_count,omitempty"`
 }
 
+// Result 保存单个目标的探测结果，后续会被统一汇总成报告。
 type Result struct {
 	Name      string
 	Address   string
@@ -46,6 +53,7 @@ type Result struct {
 	CheckedAt time.Time
 }
 
+// Summary 保存所有 Result 统计后的汇总信息。
 type Summary struct {
 	Total          int
 	Success        int
@@ -57,6 +65,7 @@ type Summary struct {
 }
 
 func main() {
+	// main 只负责串联整体流程：解析参数 -> 读取配置 -> 并发探测 -> 生成报告 -> 保存日志。
 	configPath, timeout, verbose := parseFlags(os.Args[1:])
 
 	config, err := LoadConfig(configPath)
@@ -65,8 +74,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	// RunChecks 会一次性启动所有目标的探测任务，并在全部完成后返回结果列表。
 	results := RunChecks(config.Targets, timeout, verbose, os.Stdout)
+	// BuildSummary 负责把每个目标的结果统计成成功率、响应时间分布等汇总数据。
 	summary := BuildSummary(results)
+	// BuildReport 负责把汇总数据和明细结果拼成适合终端查看的报告文本。
 	report := BuildReport(results, summary)
 
 	fmt.Println()
@@ -86,6 +98,7 @@ func main() {
 }
 
 func parseFlags(args []string) (string, time.Duration, bool) {
+	// flag 包用于解析命令行参数，例如：go run . --config config.json --timeout 3 -v
 	fs := flag.NewFlagSet("monitor", flag.ExitOnError)
 	configPath := fs.String("config", defaultConfigPath, "配置文件路径")
 	timeoutSec := fs.Int("timeout", defaultTimeoutSec, "单个探测超时时间，单位为秒")
@@ -100,6 +113,7 @@ func parseFlags(args []string) (string, time.Duration, bool) {
 }
 
 func LoadConfig(path string) (Config, error) {
+	// 读取外部 JSON 配置文件，让探测目标不用写死在代码里。
 	file, err := os.Open(path)
 	if err != nil {
 		return Config{}, err
@@ -118,6 +132,7 @@ func LoadConfig(path string) (Config, error) {
 	}
 
 	for i := range config.Targets {
+		// 对每个目标做基础校验和默认值补全，尽量在程序启动阶段发现配置错误。
 		target := &config.Targets[i]
 		target.Protocol = strings.ToLower(strings.TrimSpace(target.Protocol))
 		target.Name = strings.TrimSpace(target.Name)
@@ -150,6 +165,7 @@ func LoadConfig(path string) (Config, error) {
 }
 
 func DetectProtocol(address string) string {
+	// 如果地址以 http:// 或 https:// 开头，就按 HTTP 探测；否则默认按 TCP 端口探测。
 	lower := strings.ToLower(address)
 	if strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://") {
 		return "http"
@@ -159,12 +175,15 @@ func DetectProtocol(address string) string {
 
 func RunChecks(targets []Target, timeout time.Duration, verbose bool, writer io.Writer) []Result {
 	results := make([]Result, 0, len(targets))
+	// resultCh 用来接收各个 goroutine 的探测结果，避免多个 goroutine 同时写同一个切片。
 	resultCh := make(chan Result, len(targets))
+	// WaitGroup 用来等待所有探测任务结束，保证报告在全部任务完成后再生成。
 	var wg sync.WaitGroup
 
 	start := time.Now()
 	for _, target := range targets {
 		wg.Add(1)
+		// 每个目标单独启动一个 goroutine，实现并发探测。
 		go func(t Target) {
 			defer wg.Done()
 			result := CheckWithRetry(t, timeout)
@@ -180,8 +199,10 @@ func RunChecks(targets []Target, timeout time.Duration, verbose bool, writer io.
 	}
 
 	wg.Wait()
+	// 所有 goroutine 都已经写入结果后关闭 channel，后面的 range 才能正常结束。
 	close(resultCh)
 
+	// 只有主 goroutine 在这里写 results 切片，因此不会出现并发写切片的数据竞态。
 	for result := range resultCh {
 		results = append(results, result)
 	}
@@ -198,6 +219,7 @@ func RunChecks(targets []Target, timeout time.Duration, verbose bool, writer io.
 }
 
 func CheckWithRetry(target Target, timeout time.Duration) Result {
+	// retry_count 表示“失败后额外重试几次”，所以最大尝试次数要加上第一次执行。
 	maxAttempts := target.RetryCount + 1
 	var last Result
 
@@ -213,6 +235,7 @@ func CheckWithRetry(target Target, timeout time.Duration) Result {
 }
 
 func CheckTarget(target Target, timeout time.Duration) Result {
+	// CheckTarget 只处理一个目标：记录开始时间、执行协议探测、包装成功或失败结果。
 	start := time.Now()
 	result := Result{
 		Name:      target.Name,
@@ -224,6 +247,7 @@ func CheckTarget(target Target, timeout time.Duration) Result {
 	// 按作业要求保留 1 秒延时，便于演示并发扫描效果。
 	time.Sleep(1 * time.Second)
 
+	// context.WithTimeout 是超时控制的核心，避免某个 HTTP/TCP 请求一直卡住。
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -247,6 +271,7 @@ func CheckTarget(target Target, timeout time.Duration) Result {
 }
 
 func checkHTTP(ctx context.Context, target Target) error {
+	// HTTP 探测：发起 GET 请求，检查状态码，必要时再检查响应内容。
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, target.Address, nil)
 	if err != nil {
 		return err
@@ -277,6 +302,7 @@ func checkHTTP(ctx context.Context, target Target) error {
 }
 
 func checkTCP(ctx context.Context, target Target) error {
+	// TCP 探测：尝试连接 host:port，能连上就认为端口服务可用。
 	dialer := net.Dialer{}
 	conn, err := dialer.DialContext(ctx, "tcp", target.Address)
 	if err != nil {
@@ -286,6 +312,7 @@ func checkTCP(ctx context.Context, target Target) error {
 }
 
 func BuildSummary(results []Result) Summary {
+	// BuildSummary 负责把多个目标的明细结果聚合成整体统计数据。
 	summary := Summary{
 		Total:          len(results),
 		ResponseLevels: map[string]int{"快": 0, "中": 0, "慢": 0},
@@ -307,6 +334,7 @@ func BuildSummary(results []Result) Summary {
 	}
 
 	if len(successful) > 0 {
+		// 最快和最慢服务只在成功结果中比较，避免超时失败目标干扰正常响应分析。
 		summary.Fastest = successful[0]
 		summary.Slowest = successful[0]
 		for _, result := range successful[1:] {
@@ -323,6 +351,7 @@ func BuildSummary(results []Result) Summary {
 }
 
 func ResponseLevel(duration time.Duration) string {
+	// 简单把响应时间分成快、中、慢三档，用于报告中的响应分布统计。
 	if duration < 500*time.Millisecond {
 		return "快"
 	}
@@ -333,6 +362,7 @@ func ResponseLevel(duration time.Duration) string {
 }
 
 func BuildReport(results []Result, summary Summary) string {
+	// 使用 strings.Builder 拼接报告，比频繁字符串相加更适合生成较长文本。
 	var builder strings.Builder
 
 	builder.WriteString("服务健康探测报告\n")
@@ -365,6 +395,7 @@ func BuildReport(results []Result, summary Summary) string {
 }
 
 func FormatResultBlock(index int, result Result) string {
+	// 明细采用分块展示，长地址和长错误信息不会把表格挤乱。
 	var builder strings.Builder
 
 	builder.WriteString(fmt.Sprintf("[%02d] %s\n", index, result.Name))
