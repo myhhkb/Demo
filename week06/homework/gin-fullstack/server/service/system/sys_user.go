@@ -60,6 +60,15 @@ func (userService *UserService) Login(u *system.SysUser) (userInter *system.SysU
 	return &user, err
 }
 
+func (userService *UserService) UpdateLoginTrace(userID uint, ip string, loginTime time.Time) error {
+	return global.GVA_DB.Model(&system.SysUser{}).
+		Where("id = ?", userID).
+		Updates(map[string]interface{}{
+			"last_login_ip":   ip,
+			"last_login_time": loginTime,
+		}).Error
+}
+
 //@author: [piexlmax](https://github.com/piexlmax)
 //@function: ChangePassword
 //@description: 修改用户密码

@@ -60,6 +60,18 @@
           min-width="180"
           prop="email"
         />
+        <el-table-column
+          align="left"
+          label="登录 IP"
+          min-width="140"
+          prop="lastLoginIp"
+          show-overflow-tooltip
+        />
+        <el-table-column align="left" label="登录时间" min-width="170">
+          <template #default="scope">
+            {{ formatLoginTime(scope.row.lastLoginTime) }}
+          </template>
+        </el-table-column>
         <el-table-column align="left" label="用户角色" min-width="200">
           <template #default="scope">
             <el-cascader
@@ -266,13 +278,19 @@
   import { nextTick, ref, watch } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import SelectImage from '@/components/selectImage/selectImage.vue'
-  import { useAppStore } from "@/pinia";
+  import { useAppStore } from '@/pinia'
+  import { formatTimeToStr } from '@/utils/date'
 
   defineOptions({
     name: 'User'
   })
 
   const appStore = useAppStore()
+
+  const formatLoginTime = (time) => {
+    if (!time) return ''
+    return formatTimeToStr(time, 'yyyy-MM-dd hh:mm')
+  }
 
   const searchInfo = ref({
     username: '',

@@ -1,6 +1,8 @@
 package initialize
 
 import (
+	"os"
+
 	"github.com/flipped-aurora/gin-vue-admin/server/config"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/initialize/internal"
@@ -23,6 +25,11 @@ func GormSqliteByConfig(s config.Sqlite) *gorm.DB {
 func initSqliteDatabase(s config.Sqlite) *gorm.DB {
 	if s.Dbname == "" {
 		return nil
+	}
+	if s.Path != "" {
+		if err := os.MkdirAll(s.Path, os.ModePerm); err != nil {
+			panic(err)
+		}
 	}
 
 	// 数据库配置
