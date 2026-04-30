@@ -210,12 +210,12 @@ sqlite:
     prefix: ""
     port: ""
     config: ""
-    db-name: gin-fullstack
+    db-name: 
     username: ""
     password: ""
-    path: data
+    path: ""
     engine: ""
-    log-mode: error
+    log-mode: ""
     max-idle-conns: 10
     max-open-conns: 100
     singular: false
