@@ -84,7 +84,7 @@ hua-wei-obs:
     access-key: you-access-key
     secret-key: you-secret-key
 jwt:
-    signing-key: c78a1ed0-84be-47b3-bfbe-0d110c9366ac
+    signing-key: c92a0c31-83be-495b-999e-4e0e89a234ef
     expires-time: 7d
     buffer-time: 1d
     issuer: qmPlus
@@ -210,12 +210,12 @@ sqlite:
     prefix: ""
     port: ""
     config: ""
-    db-name: 
+    db-name: gva
     username: ""
     password: ""
-    path: ""
+    path: data
     engine: ""
-    log-mode: ""
+    log-mode: error
     max-idle-conns: 10
     max-open-conns: 100
     singular: false

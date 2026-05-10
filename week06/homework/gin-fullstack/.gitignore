@@ -37,7 +37,4 @@ web/pnpm-lock.yaml
 # binary files
 *.exe
 
-# SQLite database files
-*.db
-*.sqlite
-*.sqlite3
+
