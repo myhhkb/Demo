@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"ai-vocabulary/model"
 	"ai-vocabulary/service"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type QueryWordRequest struct {
@@ -23,6 +25,17 @@ type SaveWordRequest struct {
 	AIProvider string   `json:"ai_provider"`
 }
 
+func normalizeAIProvider(provider string) (string, bool) {
+	provider = strings.TrimSpace(provider)
+	if provider == "" {
+		return "qwen", true
+	}
+	if provider == "qwen" || provider == "deepseek" {
+		return provider, true
+	}
+	return "", false
+}
+
 func QueryWord(c *gin.Context) {
 	var req QueryWordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -30,11 +43,20 @@ func QueryWord(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetUint("user_id")
-
-	if req.AIProvider == "" {
-		req.AIProvider = "qwen"
+	req.Word = strings.TrimSpace(req.Word)
+	if req.Word == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "word cannot be empty"})
+		return
 	}
+
+	provider, ok := normalizeAIProvider(req.AIProvider)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "ai_provider must be qwen or deepseek"})
+		return
+	}
+	req.AIProvider = provider
+
+	userID := c.GetUint("user_id")
 
 	var existingWord model.Word
 	err := model.DB.Where("user_id = ? AND word = ?", userID, req.Word).First(&existingWord).Error
@@ -79,9 +101,60 @@ func SaveWord(c *gin.Context) {
 		return
 	}
 
+	req.Word = strings.TrimSpace(req.Word)
+	if req.Word == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "word cannot be empty"})
+		return
+	}
+	if len(req.Examples) != 3 {
+		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "examples must contain exactly 3 items"})
+		return
+	}
+
+	provider, ok := normalizeAIProvider(req.AIProvider)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "ai_provider must be qwen or deepseek"})
+		return
+	}
+	req.AIProvider = provider
+
 	userID := c.GetUint("user_id")
 
-	examplesJSON, _ := json.Marshal(req.Examples)
+	examplesJSON, err := json.Marshal(req.Examples)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "invalid examples"})
+		return
+	}
+
+	var existingWord model.Word
+	err = model.DB.Unscoped().Where("user_id = ? AND word = ?", userID, req.Word).First(&existingWord).Error
+	if err == nil {
+		if existingWord.DeletedAt.Valid {
+			if err := model.DB.Unscoped().Model(&existingWord).Updates(map[string]interface{}{
+				"definition":  req.Definition,
+				"examples":    string(examplesJSON),
+				"ai_provider": req.AIProvider,
+				"deleted_at":  nil,
+			}).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "failed to restore word"})
+				return
+			}
+			model.DB.Where("id = ?", existingWord.ID).First(&existingWord)
+			c.JSON(http.StatusOK, gin.H{
+				"code":    200,
+				"message": "word saved",
+				"data":    existingWord,
+			})
+			return
+		}
+
+		c.JSON(http.StatusConflict, gin.H{"code": 409, "message": "word already exists in your vocabulary"})
+		return
+	}
+	if err != nil && err != gorm.ErrRecordNotFound {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "failed to check existing word"})
+		return
+	}
 
 	word := model.Word{
 		UserID:     userID,

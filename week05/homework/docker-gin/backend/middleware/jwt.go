@@ -28,6 +28,9 @@ func JWTAuth() gin.HandlerFunc {
 
 		tokenStr := parts[1]
 		token, err := jwt.Parse(tokenStr, func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, jwt.ErrTokenSignatureInvalid
+			}
 			return []byte(config.AppConfig.JWTSecret), nil
 		})
 
@@ -44,9 +47,21 @@ func JWTAuth() gin.HandlerFunc {
 			return
 		}
 
-		userID := uint(claims["user_id"].(float64))
-		username := claims["username"].(string)
-		c.Set("user_id", userID)
+		userIDFloat, ok := claims["user_id"].(float64)
+		if !ok || userIDFloat <= 0 {
+			c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "invalid token user_id"})
+			c.Abort()
+			return
+		}
+
+		username, ok := claims["username"].(string)
+		if !ok || username == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "invalid token username"})
+			c.Abort()
+			return
+		}
+
+		c.Set("user_id", uint(userIDFloat))
 		c.Set("username", username)
 		c.Next()
 	}

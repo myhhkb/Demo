@@ -24,5 +24,6 @@ CREATE TABLE IF NOT EXISTS words (
     KEY idx_user_id (user_id),
     KEY idx_word (word),
     KEY idx_deleted_at (deleted_at),
+    UNIQUE KEY uk_user_word (user_id, word),
     CONSTRAINT fk_words_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

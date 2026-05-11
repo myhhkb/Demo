@@ -101,8 +101,8 @@ func QueryWord(word string, aiProvider string) (*WordResult, error) {
 		}
 	}
 
-	if len(result.Examples) > 3 {
-		result.Examples = result.Examples[:3]
+	if len(result.Examples) != 3 {
+		return nil, fmt.Errorf("AI response must contain exactly 3 examples, got %d", len(result.Examples))
 	}
 
 	return &result, nil

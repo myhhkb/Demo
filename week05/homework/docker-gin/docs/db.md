@@ -34,8 +34,8 @@
 | 字段名 | 数据类型 | 是否主键 | 是否可空 | 索引 | 默认值 | 说明 |
 |--------|----------|----------|----------|------|--------|------|
 | id | BIGINT UNSIGNED | 是 (PK) | 否 | AUTO_INCREMENT | - | 单词记录唯一标识 |
-| user_id | BIGINT UNSIGNED | 否 | 否 | KEY (idx_user_id), FK | - | 关联用户 ID |
-| word | VARCHAR(128) | 否 | 否 | KEY (idx_word) | - | 英语单词 |
+| user_id | BIGINT UNSIGNED | 否 | 否 | KEY (idx_user_id), UNIQUE (uk_user_word), FK | - | 关联用户 ID |
+| word | VARCHAR(128) | 否 | 否 | KEY (idx_word), UNIQUE (uk_user_word) | - | 英语单词 |
 | definition | TEXT | 否 | 否 | - | - | AI 生成的中文释义 |
 | examples | TEXT | 否 | 否 | - | - | 例句，JSON 数组格式存储 |
 | ai_provider | VARCHAR(32) | 否 | 否 | - | '' | AI 模型来源（qwen/deepseek） |
@@ -48,6 +48,7 @@
 - `KEY idx_user_id (user_id)`: 用户 ID 索引，加速按用户查询
 - `KEY idx_word (word)`: 单词索引，加速单词查找
 - `KEY idx_deleted_at (deleted_at)`: 软删除索引，GORM 软删除查询优化
+- `UNIQUE KEY uk_user_word (user_id, word)`: 用户维度单词唯一索引，防止同一用户重复保存同一个单词
 - `FOREIGN KEY fk_words_user (user_id) REFERENCES users(id) ON DELETE CASCADE`: 外键约束
 
 ---
