@@ -20,7 +20,7 @@ type Word struct {
 	Word       string         `json:"word" gorm:"type:varchar(128);index;not null"`
 	Definition string         `json:"definition" gorm:"type:text;not null"`
 	Examples   string         `json:"examples" gorm:"type:text;not null"`
-	AIProvider string         `json:"ai_provider" gorm:"type:varchar(32)"`
+	AIProvider string         `json:"ai_provider" gorm:"column:ai_provider;type:varchar(32)"`
 	CreatedAt  time.Time      `json:"created_at"`
 	UpdatedAt  time.Time      `json:"updated_at"`
 	DeletedAt  gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`

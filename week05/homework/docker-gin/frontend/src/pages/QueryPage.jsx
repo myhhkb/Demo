@@ -49,7 +49,8 @@ export default function QueryPage() {
       setResult({ ...result, saved: true })
       setMessage({ type: 'success', text: '单词已保存到你的单词本' })
     } catch (err) {
-      setMessage({ type: 'error', text: '保存失败，请重试' })
+      const msg = err.response?.data?.message || '保存失败，请重试'
+      setMessage({ type: 'error', text: msg })
     } finally {
       setSaving(false)
     }
