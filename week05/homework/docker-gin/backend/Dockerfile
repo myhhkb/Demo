@@ -5,6 +5,10 @@ RUN apk add --no-cache gcc musl-dev
 
 WORKDIR /app
 
+# 构建阶段默认走 proxy.golang.org，国内/受限网络常被拒绝；改用国内代理与校验库镜像
+ENV GOPROXY=https://goproxy.cn,direct
+ENV GOSUMDB=sum.golang.google.cn
+
 COPY go.mod go.sum ./
 RUN go mod download
 
