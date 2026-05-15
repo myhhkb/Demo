@@ -24,35 +24,31 @@
 
 ## 开发任务索引
 
-- [x] 用户注册/登录（JWT 鉴权）
-- [x] 智能查询单词（调用阿里百炼云 AI 接口，支持通义千问/DeepSeek 模型选择）
-- [x] 手动保存单词到个人单词本
-- [x] 获取单词列表（支持分页）
-- [x] 删除单词（软删除）
-- [x] 前后端分离架构（Vite + React / Go + Gin）
-- [x] Docker Compose 一键部署
-- [x] Nginx 反向代理（生产环境跨域解决）
-- [x] Vite Proxy（开发环境跨域解决）
-- [x] 完整文档（README、API 文档、数据库设计文档）
+- 用户注册/登录（JWT 鉴权）
+- 智能查询单词（调用阿里百炼云 AI 接口，支持通义千问/DeepSeek 模型选择）
+- 手动保存单词到个人单词本
+- 获取单词列表（支持分页）
+- 删除单词（软删除）
+- 前后端分离架构（Vite + React / Go + Gin）
+- Docker Compose 一键部署
+- Nginx 反向代理（生产环境跨域解决）
+- Vite Proxy（开发环境跨域解决）
+- 完整文档（README、API 文档、数据库设计文档）
 
 ---
 
 ## 项目亮点
 
-1. **AI 查询与持久化解耦**  
-   用户查询单词时，系统先调用 AI 接口返回释义与例句；只有在用户点击“保存到单词本”后，系统才会将数据写入数据库，避免无效存储。
-
-2. **用户数据隔离**  
-   所有单词数据均与当前登录用户绑定，不同用户之间的单词本彼此隔离。
-
-3. **软删除设计**  
-   删除单词时并不直接物理删除数据库记录，而是采用软删除方式，便于后续扩展恢复、统计和审计功能。
-
-4. **前后端分离部署完整**  
-   项目同时覆盖开发环境与生产环境的运行方式，具备较完整的工程化实践价值。
-
-5. **跨域处理符合要求**  
-   没有在 Go 后端中使用 CORS 中间件，而是分别通过开发环境代理和生产环境反向代理解决跨域。
+1. **AI 查询与持久化解耦**
+  用户查询单词时，系统先调用 AI 接口返回释义与例句；只有在用户点击“保存到单词本”后，系统才会将数据写入数据库，避免无效存储。
+2. **用户数据隔离**
+  所有单词数据均与当前登录用户绑定，不同用户之间的单词本彼此隔离。
+3. **软删除设计**
+  删除单词时并不直接物理删除数据库记录，而是采用软删除方式，便于后续扩展恢复、统计和审计功能。
+4. **前后端分离部署完整**
+  项目同时覆盖开发环境与生产环境的运行方式，具备较完整的工程化实践价值。
+5. **跨域处理符合要求**
+  没有在 Go 后端中使用 CORS 中间件，而是分别通过开发环境代理和生产环境反向代理解决跨域。
 
 ---
 
@@ -96,13 +92,15 @@
 
 本项目采用前后端分离架构，并通过 Docker Compose 编排为三个核心服务：`frontend`、`backend`、`db`。
 
-| 层级 | 服务/组件 | 技术实现 | 主要职责 | 对外暴露 |
-|------|-----------|----------|----------|----------|
-| 用户访问层 | Browser | 浏览器 | 访问前端页面、发起 API 请求 | - |
-| 前端入口层 | frontend | Nginx + React 静态资源 | 提供前端页面，并将 `/api` 请求反向代理到后端 | `80:80` |
-| 后端接口层 | backend | Go + Gin | 用户认证、单词查询、单词保存、单词列表、单词删除 | 仅容器网络内部 `8080` |
-| 数据持久层 | db | MySQL 8.0 | 保存用户信息和单词记录 | 仅容器网络内部 `3306` |
-| 外部服务 | 阿里百炼云 | 通义千问 / DeepSeek API | 生成单词释义和 3 条例句 | 由后端通过 HTTPS 调用 |
+
+| 层级    | 服务/组件    | 技术实现                | 主要职责                       | 对外暴露           |
+| ----- | -------- | ------------------- | -------------------------- | -------------- |
+| 用户访问层 | Browser  | 浏览器                 | 访问前端页面、发起 API 请求           | -              |
+| 前端入口层 | frontend | Nginx + React 静态资源  | 提供前端页面，并将 `/api` 请求反向代理到后端 | `80:80`        |
+| 后端接口层 | backend  | Go + Gin            | 用户认证、单词查询、单词保存、单词列表、单词删除   | 仅容器网络内部 `8080` |
+| 数据持久层 | db       | MySQL 8.0           | 保存用户信息和单词记录                | 仅容器网络内部 `3306` |
+| 外部服务  | 阿里百炼云    | 通义千问 / DeepSeek API | 生成单词释义和 3 条例句              | 由后端通过 HTTPS 调用 |
+
 
 ### 请求流转过程
 
@@ -116,27 +114,31 @@
 
 ### 容器访问关系
 
-| 调用方 | 被调用方 | 访问地址 | 用途 |
-|--------|----------|----------|------|
-| Browser | frontend | `http://localhost` | 访问前端页面 |
-| frontend/Nginx | backend | `http://backend:8080` | 反向代理 API 请求 |
-| backend | db | `db:3306` | 连接 MySQL 数据库 |
-| backend | 阿里百炼云 | `https://dashscope.aliyuncs.com/...` | 调用 AI 大模型接口 |
+
+| 调用方            | 被调用方     | 访问地址                                 | 用途           |
+| -------------- | -------- | ------------------------------------ | ------------ |
+| Browser        | frontend | `http://localhost`                   | 访问前端页面       |
+| frontend/Nginx | backend  | `http://backend:8080`                | 反向代理 API 请求  |
+| backend        | db       | `db:3306`                            | 连接 MySQL 数据库 |
+| backend        | 阿里百炼云    | `https://dashscope.aliyuncs.com/...` | 调用 AI 大模型接口  |
+
 
 ---
 
 ## 技术栈
 
-| 层级 | 技术 |
-|------|------|
-| 后端框架 | Go 1.21 + Gin |
-| 前端框架 | Vite 5 + React 18 |
-| 数据库 | MySQL 8.0 + GORM |
-| 身份验证 | JWT (golang-jwt/jwt) |
-| 配置管理 | Viper |
-| AI 接口 | 阿里百炼云 (通义千问 / DeepSeek) |
-| 容器化 | Docker + Docker Compose |
-| Web 服务器 | Nginx (生产环境反向代理) |
+
+| 层级      | 技术                      |
+| ------- | ----------------------- |
+| 后端框架    | Go 1.21 + Gin           |
+| 前端框架    | Vite 5 + React 18       |
+| 数据库     | MySQL 8.0 + GORM        |
+| 身份验证    | JWT (golang-jwt/jwt)    |
+| 配置管理    | Viper                   |
+| AI 接口   | 阿里百炼云 (通义千问 / DeepSeek) |
+| 容器化     | Docker + Docker Compose |
+| Web 服务器 | Nginx (生产环境反向代理)        |
+
 
 ---
 
@@ -181,15 +183,60 @@ week05/homework/docker-gin
 
 ### 配置 AI API Key
 
-API Key 已在 `docker-compose.yml` 和 `backend/.env` 中配置好。如需更换，请修改以下位置：
+出于安全考虑，真实的 AI API Key **不能上传到代码仓库**。本项目中的 `backend/.env` 会提交到仓库，但只作为配置模板使用，其中的 `AI_API_KEY` 是占位值：
 
-1. `backend/.env` 文件中的 `AI_API_KEY`
-2. `docker-compose.yml` 中 `backend` 服务的 `AI_API_KEY` 环境变量
+```text
+AI_API_KEY=your_dashscope_api_key_here
+```
+
+拉取代码后，需要先按照下面步骤配置自己的 API Key。
+
+#### 方式一：修改 `backend/.env`（本地后端开发使用）
+
+进入 `backend/.env`，将占位值替换为自己的阿里百炼云 API Key：
+
+```text
+AI_API_KEY=你的真实APIKey
+```
+
+这种方式适合本地直接运行后端：
+
+```bash
+cd backend
+go run main.go
+```
+
+#### 方式二：通过环境变量传入（Docker Compose 推荐方式）
+
+`docker-compose.yml` 中没有写死真实密钥，而是通过环境变量读取：
+
+```text
+AI_API_KEY: ${AI_API_KEY:-your_dashscope_api_key_here}
+```
+
+因此使用 Docker Compose 启动前，需要先在当前终端设置环境变量。
+
+Windows PowerShell：
+
+```powershell
+$env:AI_API_KEY="你的真实APIKey"
+docker-compose up -d
+```
+
+macOS / Linux：
+
+```bash
+export AI_API_KEY="你的真实APIKey"
+docker-compose up -d
+```
+
+如果没有配置真实 API Key，项目仍然可以启动，但智能查询单词时会因为无法正常调用 AI 接口而失败。
 
 ### 一键启动
 
 ```bash
 cd week05/homework/docker-gin
+# 启动前请先按上方说明配置 AI_API_KEY
 docker-compose up -d
 ```
 
@@ -207,8 +254,8 @@ docker-compose ps
 
 ### 访问应用
 
-- **前端页面**: http://localhost
-- **后端 API**: http://localhost/api
+- **前端页面**: [http://localhost](http://localhost)
+- **后端 API**: [http://localhost/api](http://localhost/api)
 
 ### 停止服务
 
@@ -402,8 +449,6 @@ http://localhost
 
 第四，我掌握了 **开发环境和生产环境跨域问题的不同解决方式**。通过 Vite Proxy 和 Nginx 反向代理，我理解了为什么很多项目并不直接依赖后端 CORS 配置，而是通过网关或代理层统一处理请求。
 
-
-
 ### 二、此次作业的难点
 
 这次作业中，我觉得主要有以下几个难点。
@@ -435,3 +480,4 @@ http://localhost
 - [API 接口文档](./docs/api.md)
 - [数据库设计文档](./docs/db.md)
 - [数据库初始化脚本](./docs/init.sql)
+
