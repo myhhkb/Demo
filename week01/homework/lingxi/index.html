@@ -1,10 +1,28 @@
 <!DOCTYPE html>
+<!--
+  灵犀 AI 对话助手 — 页面入口（结构 + 静态 UI；业务逻辑在 js/）
+
+  纵向布局（flex 列，占满一屏 h-screen）：
+    #chatHeader      对话顶栏（默认隐藏）
+    #welcomeSection  欢迎页（默认显示）  } 二选一，由 index.js enterChat / goHome 切换
+    #chatSection     消息区（默认隐藏）  }
+    底部输入区        始终显示
+
+  脚本顺序：constants → theme → ui → api → index
+
+  底部区常用 id（index.js 会 getElementById）：
+    messageInput  sendBtn  stopBtn  imageUpload  imagePreview
+    themeBtn  clearBtn  apiKeyBtn  backBtn
+  建议卡：class=".suggestion-card"，文案在 data-prompt
+-->
 <html lang="zh-CN" class="h-full dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WPS 灵犀</title>
     <link rel="icon" href="./assets/logo.png" type="image/png">
+
+    <!-- Tailwind CDN：布局工具类；darkMode 与 theme.js 在 <html> 上切换的 dark 类配合 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -18,18 +36,28 @@
             }
         }
     </script>
+
+    <!-- highlight.js：渲染 AI 代码块后高亮（ui.js → hljs.highlightElement） -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <!-- marked：Markdown → HTML（api.js 设选项，ui.js renderMarkdown 调用） -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <!-- 自定义 CSS：渐变标题、消息动画、气泡内 Markdown 等 -->
     <link rel="stylesheet" href="./css/index.css">
 </head>
+
+<!-- 深色默认色；切浅色时 theme.js → applyThemeStyles 会改 body 行内样式 -->
 <body class="h-full font-sans overflow-hidden" style="background:#0f1423;color:#f1f5f9">
 
 <div class="flex flex-col h-screen">
 
-    <!-- ===== 对话页顶部导航栏（D-02 锁定：返回主页在左侧）===== -->
+    <!-- ===== 区域 A：对话顶栏（进入聊天后显示）===== -->
+    <!-- id 供 index.js：chatHeader、backBtn。默认 class 含 hidden -->
     <header id="chatHeader" class="hidden items-center justify-between px-4 py-2.5 flex-shrink-0"
             style="border-bottom:1px solid rgba(255,255,255,0.08);background:#0f1423">
         <button id="backBtn" class="flex items-center gap-1.5 text-sm text-slate-400 transition-colors px-3 py-1.5 rounded-lg">
@@ -44,7 +72,8 @@
         </span>
     </header>
 
-    <!-- ===== 欢迎区域 ===== -->
+    <!-- ===== 区域 B：欢迎页（首屏，默认显示）===== -->
+    <!-- #welcomeSection：首条消息发送后由 enterChat() 隐藏；标题渐变见 css .welcome-title -->
     <div id="welcomeSection" class="flex-1 flex flex-col items-center justify-center px-6 overflow-y-auto animate-fadeIn" style="padding-bottom:6vh">
         <div class="w-full max-w-4xl mx-auto">
 
@@ -54,7 +83,7 @@
                 <p class="welcome-subtitle" style="font-size:1.25rem">我能帮你什么吗？</p>
             </div>
 
-            <!-- 快捷建议卡片（图标绝对定位右下角）-->
+            <!-- 建议卡：.suggestion-card + data-prompt；点击后 index.js 填入输入框并发送 -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
 
                 <!-- 卡片1：代码图标，蓝色 -->
@@ -122,23 +151,25 @@
         </div>
     </div>
 
-    <!-- ===== 对话区域 ===== -->
+    <!-- ===== 区域 C：对话消息区（默认 hidden，与欢迎页互斥）===== -->
+    <!-- #chatMessages：空容器；气泡由 ui.js addMessage() 插入；滚动监听在 index.js -->
     <div id="chatSection" class="hidden flex-1 overflow-y-auto px-6 py-6" style="padding-bottom:1rem">
         <div id="chatMessages" class="flex flex-col gap-5 max-w-4xl mx-auto"></div>
     </div>
 
-    <!-- ===== 底部输入区（与卡片网格宽度一致 max-w-4xl）===== -->
+    <!-- ===== 区域 D：底部输入区（始终显示）===== -->
+    <!-- 下列 id 在 index.js 开头绑定；theme-input-area 背景由 theme.js 同步 -->
     <div class="flex-shrink-0 px-6 pb-3 pt-3 theme-input-area" style="background:#0f1423">
         <div class="max-w-4xl mx-auto">
 
-            <!-- 输入行：胶囊 + 右侧按钮组 -->
+            <!-- 一行布局：左侧胶囊输入框（flex-1）+ 右侧圆形工具按钮 -->
             <div class="flex items-end gap-3">
 
-                <!-- 胶囊形输入框 -->
+                <!-- 胶囊容器：内含 textarea + 右下角悬浮按钮组（上传/预览/发送/停止） -->
                 <div class="flex-1 relative transition-all theme-input-pill"
                      style="background:#1e293b;border-radius:24px;min-height:45px">
 
-                    <!-- textarea：全宽，右侧留出滚动条空间 -->
+                    <!-- #messageInput：Enter 发送、Shift+Enter 换行；高度由 ui.js autoResizeTextarea 调整 -->
                     <textarea
                         id="messageInput"
                         class="w-full bg-transparent text-sm resize-none outline-none max-h-40 block"
@@ -147,10 +178,10 @@
                         rows="1"
                     ></textarea>
 
-                    <!-- 悬浮控制组：bottom 定位，单行时与文字同高，多行时沉至右下角 -->
+                    <!-- 绝对定位在胶囊右下角；有文字或图片时 ui.js 显示 #sendBtn -->
                     <div class="absolute flex items-center gap-1.5" style="bottom:9px;right:20px;max-width:55%;z-index:10">
 
-                        <!-- 回形针图标 -->
+                        <!-- #imageUpload：hidden，点击 label 触发；change → api.js handleImageUpload -->
                         <label class="cursor-pointer transition-colors flex-shrink-0 upload-label" data-tooltip="上传图片">
                             <svg class="w-5 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
@@ -158,10 +189,10 @@
                             <input type="file" id="imageUpload" accept="image/*" multiple class="hidden">
                         </label>
 
-                        <!-- 图片预览小圆圈容器 -->
+                        <!-- #imagePreview：缩略图由 ui.js renderImagePreview 动态插入 -->
                         <div id="imagePreview" class="flex items-center gap-1 flex-wrap"></div>
 
-                        <!-- 发送按钮 -->
+                        <!-- #sendBtn / #stopBtn：生成中与 api.js 互换显示；点击 → sendMessage / stopGeneration -->
                         <button id="sendBtn" style="display:none" data-tooltip="发送消息"
                                 class="w-7 h-7 flex items-center justify-center rounded-full bg-blue-500 hover:bg-blue-400 text-white transition-all flex-shrink-0">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -170,7 +201,7 @@
                             </svg>
                         </button>
 
-                        <!-- 停止按钮 -->
+                        <!-- #stopBtn：流式生成中显示，点击 api.js stopGeneration 中断请求 -->
                         <button id="stopBtn" style="display:none" data-tooltip="停止生成"
                                 class="w-7 h-7 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-400 text-white transition-colors flex-shrink-0">
                             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
@@ -182,7 +213,7 @@
 
                 </div>
 
-                <!-- D-01 锁定：主题切换按钮在输入框右侧 -->
+                <!-- #themeBtn → theme.js toggleTheme；sun-icon / moon-icon 由 syncThemeIcons 显隐 -->
                 <button id="themeBtn" data-tooltip="切换主题"
                         class="w-12 flex items-center justify-center rounded-full flex-shrink-0 transition-colors"
                         style="background:#1e293b;color:#64748b;height:45px">
@@ -198,7 +229,7 @@
                     </svg>
                 </button>
 
-                <!-- 清除按钮 -->
+                <!-- #clearBtn → index.js clearConversation（清空历史并 goHome） -->
                 <button id="clearBtn" data-tooltip="清除对话"
                         class="w-12 flex items-center justify-center rounded-full flex-shrink-0 transition-colors"
                         style="background:#1e293b;color:#64748b;height:45px">
@@ -212,8 +243,9 @@
                         <line x1="10" y1="11" x2="10" y2="17"/>
                         <line x1="14" y1="11" x2="14" y2="17"/>
                     </svg>
+                </button>
 
-                <!-- API Key 按钮 -->
+                <!-- #apiKeyBtn → index.js changeApiKey（prompt 写入 localStorage） -->
                 <button id="apiKeyBtn" data-tooltip="更换 API Key"
                         class="w-12 flex items-center justify-center rounded-full flex-shrink-0 transition-colors"
                         style="background:#1e293b;color:#64748b;height:45px">
@@ -221,10 +253,9 @@
                         <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
                     </svg>
                 </button>
-                </button>
             </div>
 
-            <!-- 页脚免责声明 -->
+            <!-- 静态免责声明；样式见 css .footer-disclaimer -->
             <p class="text-center mt-3 footer-disclaimer" style="font-size:11px">
                 内容由 AI 大模型生成，请仔细甄别
             </p>
@@ -233,10 +264,15 @@
 
 </div>
 
+<!-- 1 constants：API 地址、模型名、localStorage 键名 -->
 <script src="./js/constants.js"></script>
+<!-- 2 theme：深/浅色 initTheme、toggleTheme -->
 <script src="./js/theme.js"></script>
+<!-- 3 ui：消息气泡、Markdown、Toast、输入框高度 -->
 <script src="./js/ui.js"></script>
+<!-- 4 api：流式请求、图片上传、XSS 过滤 -->
 <script src="./js/api.js"></script>
+<!-- 5 index：DOM 引用、事件绑定、sendMessage 总控（最后加载） -->
 <script src="./js/index.js"></script>
 </body>
 </html>

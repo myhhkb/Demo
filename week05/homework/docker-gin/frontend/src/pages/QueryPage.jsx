@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { queryWord, saveWord } from '../api'
 
+// 查询单词页：先向后端查询，必要时再保存到单词本。
 export default function QueryPage() {
   const [word, setWord] = useState('')
   const [aiProvider, setAiProvider] = useState('qwen')
@@ -9,6 +10,7 @@ export default function QueryPage() {
   const [result, setResult] = useState(null)
   const [message, setMessage] = useState({ type: '', text: '' })
 
+  // 发起查询请求。
   const handleQuery = async (e) => {
     e.preventDefault()
     if (!word.trim()) return
@@ -31,11 +33,13 @@ export default function QueryPage() {
     }
   }
 
+  // 把当前查询结果保存到后端。
   const handleSave = async () => {
     if (!result || result.saved) return
 
     setSaving(true)
     try {
+      // examples 可能已经是数组，也可能是字符串，这里兼容两种情况。
       const examples = Array.isArray(result.examples)
         ? result.examples
         : JSON.parse(result.examples)

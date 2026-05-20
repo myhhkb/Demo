@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getWords, deleteWord } from '../api'
 
+// 单词列表页：展示当前用户保存过的所有单词，并支持删除和查看详情。
 export default function WordListPage() {
   const [words, setWords] = useState([])
   const [total, setTotal] = useState(0)
@@ -9,6 +10,7 @@ export default function WordListPage() {
   const [loading, setLoading] = useState(false)
   const [detail, setDetail] = useState(null)
 
+  // 拉取当前页的数据。
   const fetchWords = useCallback(async () => {
     setLoading(true)
     try {
@@ -28,6 +30,7 @@ export default function WordListPage() {
 
   const totalPages = Math.ceil(total / pageSize)
 
+  // 删除单词前先让用户确认。
   const handleDelete = async (id) => {
     if (!window.confirm('确定要删除这个单词吗？')) return
     try {
@@ -38,6 +41,7 @@ export default function WordListPage() {
     }
   }
 
+  // 兼容 examples 字段是数组或 JSON 字符串两种情况。
   const parseExamples = (examples) => {
     if (Array.isArray(examples)) return examples
     try {

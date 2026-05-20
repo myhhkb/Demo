@@ -10,6 +10,7 @@ import (
 	"ai-vocabulary/config"
 )
 
+// ChatMessage、ChatRequest 和 ChatResponse 用来和外部 AI 接口交换 JSON 数据。
 type ChatMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
@@ -28,17 +29,21 @@ type ChatResponse struct {
 	Choices []ChatChoice `json:"choices"`
 }
 
+// WordResult 是 AI 返回后，我们最终希望拿到的单词结果结构。
 type WordResult struct {
 	Definition string   `json:"definition"`
 	Examples   []string `json:"examples"`
 }
 
+// QueryWord 调用外部 AI 服务，让它返回单词释义和例句。
+// 不同 provider 只是在底层模型名称上有区别。
 func QueryWord(word string, aiProvider string) (*WordResult, error) {
 	model := "qwen-turbo"
 	if aiProvider == "deepseek" {
 		model = "deepseek-v3"
 	}
 
+	// prompt 要求 AI 严格返回 JSON，方便后续解析和存库。
 	prompt := fmt.Sprintf(`请为英语单词 "%s" 提供以下信息，必须以JSON格式返回（不要包含markdown代码块标记）：
 {
   "definition": "该单词的中文释义，包含词性和常见含义",
@@ -59,6 +64,7 @@ func QueryWord(word string, aiProvider string) (*WordResult, error) {
 		return nil, fmt.Errorf("marshal request: %w", err)
 	}
 
+	// 请求外部 AI 的聊天接口。
 	req, err := http.NewRequest("POST", config.AppConfig.AIBaseURL+"/chat/completions", bytes.NewReader(bodyBytes))
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
@@ -93,6 +99,7 @@ func QueryWord(word string, aiProvider string) (*WordResult, error) {
 
 	content := chatResp.Choices[0].Message.Content
 
+	// AI 返回的内容有时会带多余文字，所以先尝试直接解析，再尝试截取 JSON 片段解析。
 	var result WordResult
 	if err := json.Unmarshal([]byte(content), &result); err != nil {
 		cleanContent := cleanJSONContent(content)
@@ -108,6 +115,7 @@ func QueryWord(word string, aiProvider string) (*WordResult, error) {
 	return &result, nil
 }
 
+// cleanJSONContent 从一段可能夹杂了额外文本的响应中，截取最外层 JSON。
 func cleanJSONContent(s string) string {
 	start := -1
 	end := -1

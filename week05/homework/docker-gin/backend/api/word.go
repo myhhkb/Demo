@@ -13,11 +13,13 @@ import (
 	"gorm.io/gorm"
 )
 
+// QueryWordRequest 是“查询单词”接口的参数。
 type QueryWordRequest struct {
 	Word       string `json:"word" binding:"required"`
 	AIProvider string `json:"ai_provider"`
 }
 
+// SaveWordRequest 是“保存单词”接口的参数。
 type SaveWordRequest struct {
 	Word       string   `json:"word" binding:"required"`
 	Definition string   `json:"definition" binding:"required"`
@@ -25,6 +27,7 @@ type SaveWordRequest struct {
 	AIProvider string   `json:"ai_provider"`
 }
 
+// normalizeAIProvider 统一 AI 提供商参数，默认使用 qwen。
 func normalizeAIProvider(provider string) (string, bool) {
 	provider = strings.TrimSpace(provider)
 	if provider == "" {
@@ -36,6 +39,8 @@ func normalizeAIProvider(provider string) (string, bool) {
 	return "", false
 }
 
+// QueryWord 先检查当前用户是否已保存过该单词；
+// 如果保存过，直接返回数据库里的结果；否则调用 AI 查询。
 func QueryWord(c *gin.Context) {
 	var req QueryWordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -56,8 +61,10 @@ func QueryWord(c *gin.Context) {
 	}
 	req.AIProvider = provider
 
+	// 从 JWT 中间件放入上下文的 user_id 里取当前用户 ID。
 	userID := c.GetUint("user_id")
 
+	// 先查数据库，看这个用户是否已经保存过该词。
 	var existingWord model.Word
 	err := model.DB.Where("user_id = ? AND word = ?", userID, req.Word).First(&existingWord).Error
 	if err == nil {
@@ -75,6 +82,7 @@ func QueryWord(c *gin.Context) {
 		return
 	}
 
+	// 如果数据库里没有，就调用 AI 服务生成释义和例句。
 	result, err := service.QueryWord(req.Word, req.AIProvider)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "AI query failed: " + err.Error()})
@@ -94,6 +102,7 @@ func QueryWord(c *gin.Context) {
 	})
 }
 
+// SaveWord 将单词保存到当前用户的词库中。
 func SaveWord(c *gin.Context) {
 	var req SaveWordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -120,16 +129,19 @@ func SaveWord(c *gin.Context) {
 
 	userID := c.GetUint("user_id")
 
+	// examples 是数组，入库前先序列化成 JSON 字符串。
 	examplesJSON, err := json.Marshal(req.Examples)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "invalid examples"})
 		return
 	}
 
+	// 允许“软删除后恢复”：如果曾经保存过同一个词，则先检查是否已经被删掉。
 	var existingWord model.Word
 	err = model.DB.Unscoped().Where("user_id = ? AND word = ?", userID, req.Word).First(&existingWord).Error
 	if err == nil {
 		if existingWord.DeletedAt.Valid {
+			// 已软删除的单词，恢复时更新内容并清空 deleted_at。
 			if err := model.DB.Unscoped().Model(&existingWord).Updates(map[string]interface{}{
 				"definition":  req.Definition,
 				"examples":    string(examplesJSON),
@@ -148,6 +160,7 @@ func SaveWord(c *gin.Context) {
 			return
 		}
 
+		// 没删过且已存在，则直接返回冲突。
 		c.JSON(http.StatusConflict, gin.H{"code": 409, "message": "word already exists in your vocabulary"})
 		return
 	}
@@ -176,6 +189,7 @@ func SaveWord(c *gin.Context) {
 	})
 }
 
+// GetWords 返回当前用户的单词列表，支持分页。
 func GetWords(c *gin.Context) {
 	userID := c.GetUint("user_id")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -211,6 +225,7 @@ func GetWords(c *gin.Context) {
 	})
 }
 
+// DeleteWord 删除当前用户自己的某个单词。
 func DeleteWord(c *gin.Context) {
 	userID := c.GetUint("user_id")
 	wordID, err := strconv.ParseUint(c.Param("id"), 10, 64)

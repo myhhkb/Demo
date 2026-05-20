@@ -59,166 +59,151 @@ function getApiKey() {
 }
 
 // ---------- 流式 AI 响应 ----------
-// generateAIResponse 会向大模型发起请求，并以“流式输出”的方式逐步显示回复内容。
-//
-// hasImages 参数表示这次请求里是否带了图片：
-// - true：使用图文模型
-// - false：使用纯文本模型
+// hasImages：true → MODEL_VISION 图文模型；false → MODEL_TEXT 纯文本模型
 async function generateAIResponse(hasImages) {
-    isGenerating = true;
-    sendBtn.style.display = 'none';
-    stopBtn.style.display = 'flex';
-    resetScrollState();
+    isGenerating = true;                      // 标记正在生成，index.js 里 sendMessage 会据此禁止重复发送
+    sendBtn.style.display = 'none';           // 生成中隐藏发送按钮
+    stopBtn.style.display = 'flex';           // 显示停止按钮，可调用 stopGeneration → abort()
+    resetScrollState();                       // 重置「用户是否上滑」标志，恢复自动滚到底（ui.js）
 
-    // 先在页面中插入一个空的 AI 消息气泡，后面再不断往里面填内容。
-    const msgWrap = addMessage('ai', '');
-    const bubble  = msgWrap.querySelector('.ai-content');
-    const avatar  = msgWrap._avatar;
-    if (avatar) avatar.classList.add('ai-avatar-spin');
+    const msgWrap = addMessage('ai', '');     // 插入一条空 AI 消息（含头像 + .ai-content 气泡）
+    const bubble  = msgWrap.querySelector('.ai-content'); // 正文容器，流式内容最终写进这里
+    const avatar  = msgWrap._avatar;          // ui.js 在 wrap 上挂的头像引用，用于加/去旋转动画
+    if (avatar) avatar.classList.add('ai-avatar-spin'); // 生成中头像旋转 + 光晕（css 动画）
 
-    // 在真正的内容返回前，先显示“思考中”。
-    bubble.innerHTML = '<span class="thinking-dots">思考中<span class="dots">...</span></span>';
+    bubble.innerHTML = '<span class="thinking-dots">思考中<span class="dots">...</span></span>'; // 首包前占位
 
-    let fullContent = '';
-    let firstChunk  = true;
-    const model = hasImages ? MODEL_VISION : MODEL_TEXT;
+    let fullContent = '';                     // 累积本条 assistant 回复的完整字符串
+    let firstChunk  = true;                   // 是否尚未收到第一个 delta（用于清空「思考中」）
+    const model = hasImages ? MODEL_VISION : MODEL_TEXT; // 按是否带图选择百炼模型名
 
     try {
-        // AbortController 可以理解为“请求遥控器”，
-        // 后面点击停止按钮时，可以用它中断当前请求。
-        currentAbortController = new AbortController();
+        currentAbortController = new AbortController(); // 与 fetch 的 signal 绑定，abort() 可中断请求与读流
 
-        const response = await fetch(ALIYUN_API_URL, {
-            method: 'POST',
+        const response = await fetch(ALIYUN_API_URL, { // 请求百炼 OpenAI 兼容 chat/completions 接口
+            method: 'POST',                      // POST 提交对话 body
             headers: {
-                'Authorization': `Bearer ${getApiKey()}`,
-                'Content-Type': 'application/json'
+                'Authorization': `Bearer ${getApiKey()}`, // Bearer 鉴权，Key 来自 localStorage
+                'Content-Type': 'application/json'       // body 为 JSON
             },
-            body: JSON.stringify({ model, messages: conversationHistory, stream: true }),
-            signal: currentAbortController.signal
+            body: JSON.stringify({ model, messages: conversationHistory, stream: true }), // stream:true 开启 SSE 流式
+            signal: currentAbortController.signal // 中止时 fetch/read 抛 AbortError
         });
 
-        // 如果 HTTP 状态码不是成功，就尝试把错误信息提取出来。
-        if (!response.ok) {
-            const errText = await response.text();
-            let errMsg = `HTTP ${response.status}`;
+        if (!response.ok) {                   // 非 2xx：401/429/500 等，不进入读流
+            const errText = await response.text(); // 读错误体（常为 JSON）
+            let errMsg = `HTTP ${response.status}`; // 默认提示含状态码
             try {
-                errMsg = JSON.parse(errText).error?.message || errMsg;
-            } catch (_) {}
-            const err = new Error(errMsg);
-            err.status = response.status;
-            throw err;
+                errMsg = JSON.parse(errText).error?.message || errMsg; // 优先用服务端 message 字段
+            } catch (_) {}                      // 非 JSON 则保持默认 errMsg
+            const err = new Error(errMsg);     // 统一走 catch 展示
+            err.status = response.status;      // 供 catch 里按 401/429/5xx 分支
+            throw err;                         // 抛出，跳过下方读流逻辑
         }
 
-        const reader  = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-        let renderTimer = null;
+        const reader  = response.body.getReader(); // ReadableStream 默认阅读器，循环 read() 取块
+        const decoder = new TextDecoder();         // Uint8Array → 字符串
+        let buffer = '';                           // 未凑满一行的残留，下次 read 继续拼
+        let renderTimer = null;                    // setTimeout id，实现 80ms 节流渲染
 
-        // scheduleRender 用来“节流渲染”。
-        // 因为流式响应可能非常碎，如果每收到一点内容就立刻完整重渲染，性能会变差。
-        function scheduleRender() {
-            if (renderTimer) return;
-            renderTimer = setTimeout(() => {
-                renderTimer = null;
-                renderMarkdown(bubble, fullContent);
-                scrollToBottom();
+        function scheduleRender() {                // 合并高频 delta，避免每个字都 marked.parse 全量 DOM
+            if (renderTimer) return;               // 已有待执行定时器则跳过（节流）
+            renderTimer = setTimeout(() => {       // 80ms 后执行一次渲染
+                renderTimer = null;                // 允许下一轮 schedule
+                renderMarkdown(bubble, fullContent); // marked + 消毒 + 代码高亮（ui.js）
+                scrollToBottom();                  // 智能滚底（用户上滑时不强拉）
             }, 80);
         }
 
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
+        while (true) {                             // 持续读流直到 done===true
+            const { done, value } = await reader.read(); // value 为本块二进制；done 表示流结束
+            if (done) break;                       // 无更多数据，退出循环
 
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop();
+            buffer += decoder.decode(value, { stream: true }); // 解码并追加（stream 处理截断的多字节 UTF-8）
+            const lines = buffer.split('\n');      // SSE 按行分隔，每行多为 data: {...}
+            buffer = lines.pop();                  // 最后一行可能半截 JSON，留到下一轮
 
-            for (const line of lines) {
-                const trimmed = line.trim();
-                if (!trimmed || trimmed === 'data: [DONE]') continue;
+            for (const line of lines) {            // 处理本批完整行
+                const trimmed = line.trim();       // 去空白
+                if (!trimmed || trimmed === 'data: [DONE]') continue; // 空行或流结束标记
 
-                if (trimmed.startsWith('data:')) {
+                if (trimmed.startsWith('data:')) { // OpenAI 兼容 SSE 行前缀
                     try {
-                        const data = JSON.parse(trimmed.slice(5).trim());
-                        const delta = data.choices?.[0]?.delta?.content;
+                        const data = JSON.parse(trimmed.slice(5).trim()); // 去掉 "data:" 后 JSON.parse
+                        const delta = data.choices?.[0]?.delta?.content; // 本事件新增文本片段
 
-                        if (delta) {
-                            // 第一次收到真实内容时，把“思考中”替换掉。
-                            if (firstChunk) {
-                                bubble.innerHTML = '';
-                                firstChunk = false;
+                        if (delta) {               // 无 content 的事件（如 role）跳过
+                            if (firstChunk) {      // 首个有效字：去掉「思考中」
+                                bubble.innerHTML = ''; // 清空占位 HTML
+                                firstChunk = false;    // 后续 chunk 不再清空
                             }
 
-                            fullContent += delta;
-                            scheduleRender();
+                            fullContent += delta;  // 拼接到完整回复
+                            scheduleRender();      // 预约节流渲染（非立即）
                         }
                     } catch (_) {
-                        // 流式数据可能存在一小段不完整 JSON，这里直接忽略即可。
+                        // 半行/坏 JSON 忽略，等后续块补全
                     }
                 }
             }
         }
 
-        // 把 AI 完整回复保存到对话历史里，方便后续多轮对话继续带上下文。
-        conversationHistory.push({ role: 'assistant', content: fullContent });
+        conversationHistory.push({ role: 'assistant', content: fullContent }); // 多轮上下文：记下 assistant 全文
 
-        // 流结束后，做一次最终完整渲染，确保页面显示的是最终版本。
-        if (renderTimer) {
-            clearTimeout(renderTimer);
+        if (renderTimer) {                         // 取消尚未触发的最后一次节流渲染
+            clearTimeout(renderTimer);             // 避免与下方最终 render 重复
             renderTimer = null;
         }
-        if (fullContent) {
+        if (fullContent) {                         // 流结束强制全量渲染一次（含未过期的 timer 内容）
             renderMarkdown(bubble, fullContent);
             scrollToBottom();
         }
     } catch (error) {
-        // 如果是用户手动点击“停止生成”，就显示停止提示，而不是报错。
-        if (error.name === 'AbortError') {
-            if (firstChunk) {
+        if (error.name === 'AbortError') {         // stopGeneration → abort()，不是接口报错
+            if (firstChunk) {                      // 从未收到 delta：整泡显示停止提示
+                // 整段 innerHTML 替换为停止 UI（含 svg 图标）
                 bubble.innerHTML = `
                     <div class="stop-mark">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
                         <span>已停止生成</span>
                     </div>`;
-            } else {
+            } else {                               // 已有部分内容：文末追加停止条，保留已生成文字
                 const stopMark = document.createElement('div');
                 stopMark.className = 'stop-mark stop-mark-divider';
                 stopMark.innerHTML = `
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
                     <span>已停止生成</span>`;
-                bubble.appendChild(stopMark);
+                bubble.appendChild(stopMark);      // append 不覆盖 bubble 内已有 Markdown
             }
-        } else {
-            let friendlyMsg = '请求失败，请稍后重试';
-            const msg = error.message || '';
+        } else {                                   // 网络 / Key / 限流 / 服务器等错误
+            let friendlyMsg = '请求失败，请稍后重试'; // 给用户看的短句
+            const msg = error.message || '';       // 原始错误文本，用于匹配分支与灰字展示
 
-            // 下面这些判断是为了把底层错误信息转换成更容易理解的用户提示。
             if (!navigator.onLine || msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
-                friendlyMsg = '网络连接失败，请检查网络后重试';
+                friendlyMsg = '网络连接失败，请检查网络后重试'; // 离线或 CORS/网络失败
             } else if (error.status === 401 || msg.includes('401') || msg.includes('Unauthorized') || (msg.toLowerCase().includes('invalid') && msg.toLowerCase().includes('key'))) {
-                // 如果 API Key 无效，就先删除旧 Key，再提示用户重新输入。
-                localStorage.removeItem(API_KEY_STORAGE);
-                const newKey = prompt(
+                localStorage.removeItem(API_KEY_STORAGE); // Key 无效：删掉 localStorage 里的旧值
+                const newKey = prompt(               // 弹窗收集新 Key
                     'API Key 无效或已过期，请重新输入阿里云百炼 API Key\n' +
                     '（获取地址：https://bailian.console.aliyun.com）'
                 );
-                if (newKey && newKey.trim()) {
+                if (newKey && newKey.trim()) {       // 用户提交了非空 Key
                     localStorage.setItem(API_KEY_STORAGE, newKey.trim());
                     showToast('API Key 已更新，请重新发送消息', 'success');
-                } else {
+                } else {                             // 取消或未输入
                     showToast('未设置 API Key，请重新发送消息以重新输入', 'warning');
                 }
                 friendlyMsg = 'API Key 无效或已过期，已清除旧 Key，请重新发送消息';
             } else if (error.status === 429 || msg.includes('429') || msg.includes('rate limit')) {
-                friendlyMsg = '请求过于频繁，请稍后再试';
+                friendlyMsg = '请求过于频繁，请稍后再试';       // 限流
             } else if (error.status >= 500 || msg.includes('500') || msg.includes('502') || msg.includes('503')) {
-                friendlyMsg = '服务器暂时不可用，请稍后重试';
+                friendlyMsg = '服务器暂时不可用，请稍后重试';   // 服务端错误
             } else if (msg.includes('timeout') || msg.includes('Timeout')) {
-                friendlyMsg = '请求超时，请检查网络后重试';
+                friendlyMsg = '请求超时，请检查网络后重试';     // 超时
             }
 
-            console.error('生成响应出错:', error);
+            console.error('生成响应出错:', error);  // 控制台保留完整 error 对象
+            // 气泡内：红字友好提示 + 灰字原始 message
             bubble.innerHTML = `
                 <div style="display:flex;flex-direction:column;gap:8px">
                     <div style="display:flex;align-items:center;gap:8px;color:#f87171">
@@ -228,15 +213,14 @@ async function generateAIResponse(hasImages) {
                     <span style="font-size:11px;color:rgba(128,128,128,0.7)">${msg}</span>
                 </div>`;
 
-            showToast(friendlyMsg, 'error');
+            showToast(friendlyMsg, 'error');         // 底部 Toast 同步提示
         }
     } finally {
-        // 无论成功还是失败，最后都要把页面状态恢复正常。
-        isGenerating = false;
-        if (avatar) avatar.classList.remove('ai-avatar-spin');
-        updateSendBtnVisibility();
-        stopBtn.style.display = 'none';
-        currentAbortController = null;
+        isGenerating = false;                      // 无论 try/catch 结果，都结束「生成中」
+        if (avatar) avatar.classList.remove('ai-avatar-spin'); // 去掉头像旋转
+        updateSendBtnVisibility();                 // 刷新发送钮显隐
+        stopBtn.style.display = 'none';            // 隐藏停止钮
+        currentAbortController = null;             // 释放 AbortController
     }
 }
 

@@ -1,13 +1,16 @@
 import { useState } from 'react'
 import { login, register } from '../api'
 
+// 登录/注册页：负责用户身份进入系统。
 export default function LoginPage({ onLogin }) {
+  // false 表示登录态，true 表示注册态。
   const [isRegister, setIsRegister] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
 
+  // 提交表单时，根据当前模式执行登录或注册。
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -15,6 +18,7 @@ export default function LoginPage({ onLogin }) {
 
     try {
       if (isRegister) {
+        // 前端先做基础校验，减少无效请求。
         if (username.length < 3) {
           setMessage({ type: 'error', text: '用户名至少3个字符' })
           setLoading(false)
@@ -30,6 +34,7 @@ export default function LoginPage({ onLogin }) {
         setIsRegister(false)
         setPassword('')
       } else {
+        // 登录成功后把 token 和用户名保存到 localStorage。
         const res = await login(username, password)
         const { token, username: uname } = res.data.data
         localStorage.setItem('token', token)
