@@ -8,6 +8,7 @@ require (
 	github.com/gin-contrib/sessions v0.0.5
 	github.com/gin-gonic/gin v1.9.1
 	github.com/glebarez/sqlite v1.11.0
+	github.com/joho/godotenv v1.5.1
 	golang.org/x/crypto v0.21.0
 	gorm.io/gorm v1.25.7
 )

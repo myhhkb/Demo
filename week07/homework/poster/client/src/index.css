@@ -50,32 +50,63 @@ body {
 }
 
 .element-selected {
-  outline: 2px solid #3b82f6;
-  outline-offset: 1px;
+  outline: none;
+}
+
+.element-selected::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 1.5px dashed #3b82f6;
+  pointer-events: none;
+  z-index: 9;
 }
 
 .resize-handle {
-  width: 8px;
-  height: 8px;
-  background: white;
-  border: 2px solid #3b82f6;
-  border-radius: 50%;
-  position: absolute;
-  z-index: 10;
-}
-
-.rotate-handle {
   width: 10px;
   height: 10px;
   background: white;
   border: 2px solid #3b82f6;
+  border-radius: 2px;
+  position: absolute;
+  z-index: 10;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.resize-handle:hover {
+  background: #3b82f6;
+  border-color: #2563eb;
+}
+
+.rotate-handle {
+  width: 12px;
+  height: 12px;
+  background: white;
+  border: 2px solid #3b82f6;
   border-radius: 50%;
   position: absolute;
-  top: -25px;
+  top: -30px;
   left: 50%;
   transform: translateX(-50%);
   cursor: grab;
   z-index: 10;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.rotate-handle:hover {
+  background: #3b82f6;
+}
+
+.rotate-handle-line {
+  position: absolute;
+  width: 1px;
+  height: 20px;
+  background: #3b82f6;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 9;
 }
 
 .guide-line {

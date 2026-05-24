@@ -218,15 +218,24 @@ export default function CanvasElement({ element, isSelected, onDragStart }: Prop
 
       {isSelected && !isEditing && (
         <>
-          <div className="resize-handle" style={{ top: -4, left: -4, cursor: 'nw-resize' }} onMouseDown={(e) => handleResizeStart(e, 'nw')} />
-          <div className="resize-handle" style={{ top: -4, right: -4, cursor: 'ne-resize' }} onMouseDown={(e) => handleResizeStart(e, 'ne')} />
-          <div className="resize-handle" style={{ bottom: -4, left: -4, cursor: 'sw-resize' }} onMouseDown={(e) => handleResizeStart(e, 'sw')} />
-          <div className="resize-handle" style={{ bottom: -4, right: -4, cursor: 'se-resize' }} onMouseDown={(e) => handleResizeStart(e, 'se')} />
-          <div className="resize-handle" style={{ top: -4, left: '50%', transform: 'translateX(-50%)', cursor: 'n-resize' }} onMouseDown={(e) => handleResizeStart(e, 'n')} />
-          <div className="resize-handle" style={{ bottom: -4, left: '50%', transform: 'translateX(-50%)', cursor: 's-resize' }} onMouseDown={(e) => handleResizeStart(e, 's')} />
-          <div className="resize-handle" style={{ top: '50%', left: -4, transform: 'translateY(-50%)', cursor: 'w-resize' }} onMouseDown={(e) => handleResizeStart(e, 'w')} />
-          <div className="resize-handle" style={{ top: '50%', right: -4, transform: 'translateY(-50%)', cursor: 'e-resize' }} onMouseDown={(e) => handleResizeStart(e, 'e')} />
-          <div className="rotate-handle" onMouseDown={handleRotateStart} title="旋转" />
+          {/* 四角控制手柄 */}
+          <div className="resize-handle" style={{ top: -5, left: -5, cursor: 'nw-resize' }} onMouseDown={(e) => handleResizeStart(e, 'nw')} />
+          <div className="resize-handle" style={{ top: -5, right: -5, cursor: 'ne-resize' }} onMouseDown={(e) => handleResizeStart(e, 'ne')} />
+          <div className="resize-handle" style={{ bottom: -5, left: -5, cursor: 'sw-resize' }} onMouseDown={(e) => handleResizeStart(e, 'sw')} />
+          <div className="resize-handle" style={{ bottom: -5, right: -5, cursor: 'se-resize' }} onMouseDown={(e) => handleResizeStart(e, 'se')} />
+          {/* 四边中点控制手柄 */}
+          <div className="resize-handle" style={{ top: -5, left: '50%', transform: 'translateX(-50%)', cursor: 'n-resize' }} onMouseDown={(e) => handleResizeStart(e, 'n')} />
+          <div className="resize-handle" style={{ bottom: -5, left: '50%', transform: 'translateX(-50%)', cursor: 's-resize' }} onMouseDown={(e) => handleResizeStart(e, 's')} />
+          <div className="resize-handle" style={{ top: '50%', left: -5, transform: 'translateY(-50%)', cursor: 'w-resize' }} onMouseDown={(e) => handleResizeStart(e, 'w')} />
+          <div className="resize-handle" style={{ top: '50%', right: -5, transform: 'translateY(-50%)', cursor: 'e-resize' }} onMouseDown={(e) => handleResizeStart(e, 'e')} />
+          {/* 旋转手柄连接线 */}
+          <div className="rotate-handle-line" />
+          {/* 旋转手柄 */}
+          <div className="rotate-handle" onMouseDown={handleRotateStart} title="旋转">
+            <svg className="w-3 h-3 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </div>
         </>
       )}
     </div>

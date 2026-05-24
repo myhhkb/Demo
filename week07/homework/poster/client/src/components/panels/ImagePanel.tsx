@@ -80,21 +80,21 @@ export default function ImagePanel() {
 
       <div className="pt-4 border-t border-gray-200">
         <h4 className="text-sm font-medium text-gray-700 mb-2">AI 生图</h4>
-        <div className="flex gap-2">
+        <div className="space-y-2">
           <input
             type="text"
             value={aiPrompt}
             onChange={(e) => setAiPrompt(e.target.value)}
             placeholder="描述你想要的图片..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
             onKeyDown={(e) => e.key === 'Enter' && handleAiGenerate()}
           />
           <button
             onClick={handleAiGenerate}
             disabled={aiLoading || !aiPrompt.trim()}
-            className="px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            className="w-full py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {aiLoading ? '生成中' : '生成'}
+            {aiLoading ? '生成中...' : 'AI 生成图片'}
           </button>
         </div>
       </div>

@@ -12,9 +12,6 @@ server/dist/
 server/uploads/*
 !server/uploads/.gitkeep
 
-# Environment
-.env
-
 # IDE
 .vscode/
 .idea/
