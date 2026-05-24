@@ -1,0 +1,24 @@
+# Dependencies
+client/node_modules/
+client/dist/
+
+# Go
+server/poster-server
+server/poster-server.exe
+server/poster.db
+server/dist/
+
+# Uploads
+server/uploads/*
+!server/uploads/.gitkeep
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
