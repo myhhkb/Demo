@@ -25,6 +25,7 @@ export default function Canvas() {
   } = useEditorStore();
 
   const canvasRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawStart, setDrawStart] = useState({ x: 0, y: 0 });
   const [drawRect, setDrawRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
@@ -38,6 +39,8 @@ export default function Canvas() {
     elementStartX: number;
     elementStartY: number;
   } | null>(null);
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
 
   const scale = zoom / 100;
 
@@ -202,53 +205,114 @@ export default function Canvas() {
         setZoom(Math.max(10, Math.min(200, zoom + delta)));
       }
     };
-    const container = document.querySelector('.canvas-container') as HTMLElement | null;
+    const container = containerRef.current;
     if (container) {
       container.addEventListener('wheel', handleWheel, { passive: false });
       return () => container.removeEventListener('wheel', handleWheel);
     }
   }, []);
 
+  // Space bar panning
+  const [spaceHeld, setSpaceHeld] = useState(false);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !(e.target as HTMLElement).isContentEditable && (e.target as HTMLElement).tagName !== 'INPUT' && (e.target as HTMLElement).tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        setSpaceHeld(true);
+      }
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setSpaceHeld(false);
+        setIsPanning(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, []);
+
+  const handleContainerMouseDown = useCallback((e: React.MouseEvent) => {
+    if (spaceHeld && containerRef.current) {
+      e.preventDefault();
+      setIsPanning(true);
+      setPanStart({
+        x: e.clientX,
+        y: e.clientY,
+        scrollLeft: containerRef.current.scrollLeft,
+        scrollTop: containerRef.current.scrollTop,
+      });
+    }
+  }, [spaceHeld]);
+
+  const handleContainerMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isPanning && containerRef.current) {
+      containerRef.current.scrollLeft = panStart.scrollLeft - (e.clientX - panStart.x);
+      containerRef.current.scrollTop = panStart.scrollTop - (e.clientY - panStart.y);
+    }
+  }, [isPanning, panStart]);
+
+  const handleContainerMouseUp = useCallback(() => {
+    setIsPanning(false);
+  }, []);
+
+  const getCursor = () => {
+    if (spaceHeld) return isPanning ? 'grabbing' : 'grab';
+    if (tool === 'text') return 'crosshair';
+    return 'default';
+  };
+
   return (
     <>
       <div
-        className="inline-block"
-        style={{
-          padding: '40px',
-          minWidth: '100%',
-          minHeight: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+        ref={containerRef}
+        className="canvas-pan-container"
+        style={{ cursor: getCursor() }}
+        onMouseDown={handleContainerMouseDown}
+        onMouseMove={handleContainerMouseMove}
+        onMouseUp={handleContainerMouseUp}
+        onMouseLeave={handleContainerMouseUp}
       >
         <div
           style={{
-            width: canvasWidth * scale,
-            height: canvasHeight * scale,
-            flexShrink: 0,
+            display: 'inline-block',
+            padding: '60px',
+            minWidth: '100%',
+            minHeight: '100%',
+            boxSizing: 'border-box',
           }}
         >
           <div
-            id="poster-canvas"
-            ref={canvasRef}
-            className="relative shadow-2xl"
             style={{
-              width: canvasWidth,
-              height: canvasHeight,
-              transform: `scale(${scale})`,
-              transformOrigin: 'top left',
-              backgroundColor,
-              backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              cursor: tool === 'text' ? 'crosshair' : 'default',
+              width: canvasWidth * scale,
+              height: canvasHeight * scale,
+              margin: '0 auto',
+              position: 'relative',
             }}
-            onMouseDown={handleCanvasMouseDown}
-            onMouseMove={handleCanvasMouseMove}
-            onMouseUp={handleCanvasMouseUp}
-            onContextMenu={handleContextMenu}
           >
+            <div
+              id="poster-canvas"
+              ref={canvasRef}
+              className="relative shadow-2xl"
+              style={{
+                width: canvasWidth,
+                height: canvasHeight,
+                transform: `scale(${scale})`,
+                transformOrigin: 'top left',
+                backgroundColor,
+                backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+              onMouseDown={spaceHeld ? undefined : handleCanvasMouseDown}
+              onMouseMove={spaceHeld ? undefined : handleCanvasMouseMove}
+              onMouseUp={spaceHeld ? undefined : handleCanvasMouseUp}
+              onContextMenu={handleContextMenu}
+            >
         {elements.map((element) => (
           <CanvasElement
             key={element.id}
@@ -277,6 +341,7 @@ export default function Canvas() {
             style={line.type === 'h' ? { top: line.position } : { left: line.position }}
           />
         ))}
+            </div>
           </div>
         </div>
       </div>
