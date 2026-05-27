@@ -27,11 +27,34 @@ export default function CanvasProperties() {
   const [uploadLoading, setUploadLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const colorInputRef = useRef<HTMLInputElement>(null);
+  const aspectRatio = canvasWidth / canvasHeight;
+
+  const handleWidthChange = (value: string) => {
+    setTempWidth(value);
+    if (isLockRatio) {
+      const w = parseInt(value);
+      if (!isNaN(w) && w > 0) {
+        setTempHeight(Math.round(w / aspectRatio).toString());
+      }
+    }
+  };
+
+  const handleHeightChange = (value: string) => {
+    setTempHeight(value);
+    if (isLockRatio) {
+      const h = parseInt(value);
+      if (!isNaN(h) && h > 0) {
+        setTempWidth(Math.round(h * aspectRatio).toString());
+      }
+    }
+  };
 
   const handleSizeChange = () => {
-    const w = parseInt(tempWidth) || 600;
-    const h = parseInt(tempHeight) || 800;
-    setCanvasSize(Math.max(100, Math.min(2000, w)), Math.max(100, Math.min(2000, h)));
+    const w = Math.max(100, Math.min(2000, parseInt(tempWidth) || 600));
+    const h = Math.max(100, Math.min(2000, parseInt(tempHeight) || 800));
+    setTempWidth(w.toString());
+    setTempHeight(h.toString());
+    setCanvasSize(w, h);
   };
 
   const handleUploadBackground = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,7 +91,7 @@ export default function CanvasProperties() {
             <input
               type="number"
               value={tempWidth}
-              onChange={(e) => setTempWidth(e.target.value)}
+              onChange={(e) => handleWidthChange(e.target.value)}
               onBlur={handleSizeChange}
               onKeyDown={(e) => e.key === 'Enter' && handleSizeChange()}
               className="w-full h-8 px-2 bg-gray-50 border border-gray-200 rounded-md text-[13px] text-center focus:bg-white focus:border-blue-400 outline-none transition"
@@ -89,7 +112,7 @@ export default function CanvasProperties() {
             <input
               type="number"
               value={tempHeight}
-              onChange={(e) => setTempHeight(e.target.value)}
+              onChange={(e) => handleHeightChange(e.target.value)}
               onBlur={handleSizeChange}
               onKeyDown={(e) => e.key === 'Enter' && handleSizeChange()}
               className="w-full h-8 px-2 bg-gray-50 border border-gray-200 rounded-md text-[13px] text-center focus:bg-white focus:border-blue-400 outline-none transition"
