@@ -193,28 +193,62 @@ export default function Canvas() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        const { zoom, setZoom } = useEditorStore.getState();
+        const delta = e.deltaY > 0 ? -10 : 10;
+        setZoom(Math.max(10, Math.min(200, zoom + delta)));
+      }
+    };
+    const container = document.querySelector('.canvas-container') as HTMLElement | null;
+    if (container) {
+      container.addEventListener('wheel', handleWheel, { passive: false });
+      return () => container.removeEventListener('wheel', handleWheel);
+    }
+  }, []);
+
   return (
     <>
       <div
-        id="poster-canvas"
-        ref={canvasRef}
-        className="relative shadow-2xl"
+        className="inline-block"
         style={{
-          width: canvasWidth,
-          height: canvasHeight,
-          transform: `scale(${scale})`,
-          transformOrigin: 'center center',
-          backgroundColor,
-          backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          cursor: tool === 'text' ? 'crosshair' : 'default',
+          padding: '40px',
+          minWidth: '100%',
+          minHeight: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
-        onMouseDown={handleCanvasMouseDown}
-        onMouseMove={handleCanvasMouseMove}
-        onMouseUp={handleCanvasMouseUp}
-        onContextMenu={handleContextMenu}
       >
+        <div
+          style={{
+            width: canvasWidth * scale,
+            height: canvasHeight * scale,
+            flexShrink: 0,
+          }}
+        >
+          <div
+            id="poster-canvas"
+            ref={canvasRef}
+            className="relative shadow-2xl"
+            style={{
+              width: canvasWidth,
+              height: canvasHeight,
+              transform: `scale(${scale})`,
+              transformOrigin: 'top left',
+              backgroundColor,
+              backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              cursor: tool === 'text' ? 'crosshair' : 'default',
+            }}
+            onMouseDown={handleCanvasMouseDown}
+            onMouseMove={handleCanvasMouseMove}
+            onMouseUp={handleCanvasMouseUp}
+            onContextMenu={handleContextMenu}
+          >
         {elements.map((element) => (
           <CanvasElement
             key={element.id}
@@ -243,6 +277,8 @@ export default function Canvas() {
             style={line.type === 'h' ? { top: line.position } : { left: line.position }}
           />
         ))}
+          </div>
+        </div>
       </div>
 
       {contextMenu && (

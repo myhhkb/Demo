@@ -69,8 +69,8 @@ export default function Editor({ user, onLogout }: EditorProps) {
       <Toolbar user={user} onLogout={handleLogout} />
       <div className="flex-1 flex overflow-hidden">
         <LeftPanel />
-        <div className="flex-1 relative flex flex-col">
-          <div className="flex-1 overflow-auto flex items-center justify-center canvas-container">
+        <div className="flex-1 relative">
+          <div className="absolute inset-0 overflow-auto canvas-container">
             <Canvas />
           </div>
           <ZoomControls />
