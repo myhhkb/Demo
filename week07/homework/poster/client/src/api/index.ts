@@ -61,18 +61,27 @@ export const api = {
   },
 
   async uploadFile(file: File) {
-    const formData = new FormData();
-    formData.append('file', file);
-    const res = await fetch(BASE_URL + '/upload', {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
+    const ext = '.' + (file.name.split('.').pop() || 'png');
+
+    const policy = await request<{ upload_url: string; object_key: string }>(
+      `/oss/upload-policy?ext=${encodeURIComponent(ext)}`
+    );
+
+    const arrayBuffer = await file.arrayBuffer();
+    const ossRes = await fetch(policy.upload_url, {
+      method: 'PUT',
+      body: new Uint8Array(arrayBuffer),
     });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({ error: '上传失败' }));
-      throw new Error(data.error || '上传失败');
+
+    if (!ossRes.ok) {
+      const text = await ossRes.text();
+      throw new Error('OSS上传失败: ' + ossRes.status + ' ' + text);
     }
-    return res.json() as Promise<{ url: string }>;
+
+    const signedRead = await request<{ url: string }>(
+      `/oss/signed-url?key=${encodeURIComponent(policy.object_key)}`
+    );
+    return { url: signedRead.url };
   },
 
   generateImage(prompt: string) {

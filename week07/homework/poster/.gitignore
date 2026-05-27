@@ -2,6 +2,11 @@
 client/node_modules/
 client/dist/
 
+# TypeScript build artifacts
+client/*.tsbuildinfo
+client/vite.config.js
+client/vite.config.d.ts
+
 # Go
 server/poster-server
 server/poster-server.exe

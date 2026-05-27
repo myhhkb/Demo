@@ -57,6 +57,8 @@ func main() {
 		api.DELETE("/posters/:id", middleware.AuthRequired(), handlers.DeletePoster)
 
 		api.POST("/upload", middleware.AuthRequired(), handlers.UploadFile)
+		api.GET("/oss/upload-policy", middleware.AuthRequired(), handlers.GetUploadPolicy)
+		api.GET("/oss/signed-url", middleware.AuthRequired(), handlers.GetSignedURL)
 		api.POST("/ai/generate-image", middleware.AuthRequired(), handlers.GenerateImage)
 	}
 

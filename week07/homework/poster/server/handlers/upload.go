@@ -14,6 +14,86 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func GetUploadPolicy(c *gin.Context) {
+	endpoint := os.Getenv("OSS_ENDPOINT")
+	accessKeyId := os.Getenv("OSS_ACCESS_KEY_ID")
+	accessKeySecret := os.Getenv("OSS_ACCESS_KEY_SECRET")
+	bucketName := os.Getenv("OSS_BUCKET")
+
+	if endpoint == "" || accessKeyId == "" || accessKeySecret == "" || bucketName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "OSS未配置"})
+		return
+	}
+
+	ext := c.Query("ext")
+	if ext == "" {
+		ext = ".png"
+	}
+
+	objectKey := fmt.Sprintf("poster/%d%s", time.Now().UnixNano(), ext)
+
+	client, err := oss.New(endpoint, accessKeyId, accessKeySecret)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "OSS连接失败"})
+		return
+	}
+
+	bucket, err := client.Bucket(bucketName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取Bucket失败"})
+		return
+	}
+
+	signedURL, err := bucket.SignURL(objectKey, oss.HTTPPut, 300)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "生成上传签名失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"upload_url": signedURL,
+		"object_key": objectKey,
+	})
+}
+
+func GetSignedURL(c *gin.Context) {
+	objectKey := c.Query("key")
+	if objectKey == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "缺少key参数"})
+		return
+	}
+
+	endpoint := os.Getenv("OSS_ENDPOINT")
+	accessKeyId := os.Getenv("OSS_ACCESS_KEY_ID")
+	accessKeySecret := os.Getenv("OSS_ACCESS_KEY_SECRET")
+	bucketName := os.Getenv("OSS_BUCKET")
+
+	if endpoint == "" || accessKeyId == "" || accessKeySecret == "" || bucketName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "OSS未配置"})
+		return
+	}
+
+	client, err := oss.New(endpoint, accessKeyId, accessKeySecret)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "OSS连接失败"})
+		return
+	}
+
+	bucket, err := client.Bucket(bucketName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取Bucket失败"})
+		return
+	}
+
+	signedURL, err := bucket.SignURL(objectKey, oss.HTTPGet, 3600)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "生成读取签名失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"url": signedURL})
+}
+
 func UploadFile(c *gin.Context) {
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
@@ -31,36 +111,6 @@ func UploadFile(c *gin.Context) {
 
 	if header.Size > 10*1024*1024 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "文件大小不能超过10MB"})
-		return
-	}
-
-	endpoint := os.Getenv("OSS_ENDPOINT")
-	accessKeyId := os.Getenv("OSS_ACCESS_KEY_ID")
-	accessKeySecret := os.Getenv("OSS_ACCESS_KEY_SECRET")
-	bucketName := os.Getenv("OSS_BUCKET")
-
-	if endpoint != "" && accessKeyId != "" && accessKeySecret != "" && bucketName != "" {
-		client, err := oss.New(endpoint, accessKeyId, accessKeySecret)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "OSS连接失败"})
-			return
-		}
-
-		bucket, err := client.Bucket(bucketName)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "获取Bucket失败"})
-			return
-		}
-
-		objectKey := fmt.Sprintf("poster/%d%s", time.Now().UnixNano(), ext)
-		err = bucket.PutObject(objectKey, file)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "上传失败"})
-			return
-		}
-
-		url := fmt.Sprintf("https://%s.%s/%s", bucketName, endpoint, objectKey)
-		c.JSON(http.StatusOK, gin.H{"url": url})
 		return
 	}
 

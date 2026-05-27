@@ -19,25 +19,29 @@ export default function CanvasElement({ element, isSelected, onDragStart }: Prop
   const handleMouseDown = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isEditing) return;
+
+    // For text elements that are already selected, clicking inside content area enters edit mode
+    if (element.type === 'text' && isSelected) {
+      const rect = elementRef.current?.getBoundingClientRect();
+      if (rect) {
+        const borderZone = 8;
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const isOnBorder = x < borderZone || x > rect.width - borderZone || y < borderZone || y > rect.height - borderZone;
+        if (!isOnBorder) {
+          setIsEditing(true);
+          setTimeout(() => {
+            if (textRef.current) {
+              textRef.current.focus();
+            }
+          }, 0);
+          return;
+        }
+      }
+    }
+
     selectElement(element.id);
     onDragStart(element.id, e);
-  };
-
-  const handleDoubleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (element.type === 'text') {
-      setIsEditing(true);
-      setTimeout(() => {
-        if (textRef.current) {
-          textRef.current.focus();
-          const selection = window.getSelection();
-          const range = document.createRange();
-          range.selectNodeContents(textRef.current);
-          selection?.removeAllRanges();
-          selection?.addRange(range);
-        }
-      }, 0);
-    }
   };
 
   const handleTextBlur = () => {
@@ -148,7 +152,7 @@ export default function CanvasElement({ element, isSelected, onDragStart }: Prop
               letterSpacing: textEl.letterSpacing,
               lineHeight: textEl.lineHeight,
               textShadow: getShadowStyle(textEl),
-              cursor: isEditing ? 'text' : 'move',
+              cursor: isEditing ? 'text' : (isSelected ? 'text' : 'move'),
               wordBreak: 'break-word',
             }}
           >
@@ -209,10 +213,9 @@ export default function CanvasElement({ element, isSelected, onDragStart }: Prop
         transform: `rotate(${element.rotation}deg)`,
         opacity: element.opacity,
         zIndex: element.zIndex,
-        cursor: isEditing ? 'text' : 'move',
+        cursor: isEditing ? 'text' : (element.type === 'text' && isSelected ? 'text' : 'move'),
       }}
       onMouseDown={handleMouseDown}
-      onDoubleClick={handleDoubleClick}
     >
       {renderContent()}
 

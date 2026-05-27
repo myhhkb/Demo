@@ -1,22 +1,35 @@
 import { useEditorStore } from '../../store';
 
 export default function TextPanel() {
-  const { setTool, tool, addTextElement, canvasWidth, canvasHeight } = useEditorStore();
+  const { setTool, tool } = useEditorStore();
 
-  const handleQuickAddText = () => {
-    const x = (canvasWidth - 200) / 2;
-    const y = (canvasHeight - 40) / 2;
-    addTextElement(x, y);
+  const isDrawingMode = tool === 'text';
+
+  const handleToggleDrawMode = () => {
+    if (isDrawingMode) {
+      setTool(null);
+    } else {
+      setTool('text');
+    }
   };
 
   return (
-    <div>
+    <div className="space-y-2">
       <button
-        onClick={handleQuickAddText}
-        className="w-full py-2.5 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 transition flex items-center justify-center gap-1"
+        onClick={handleToggleDrawMode}
+        className={`w-full py-2.5 rounded-md text-sm font-medium transition flex items-center justify-center gap-1 ${
+          isDrawingMode
+            ? 'bg-blue-500 text-white hover:bg-blue-600'
+            : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+        }`}
       >
-        添加文本
+        {isDrawingMode ? '取消绘制' : '添加文本'}
       </button>
+      {isDrawingMode && (
+        <div className="text-[12px] text-center text-blue-500 py-2 bg-blue-50 rounded-md border border-blue-200">
+          在画布上单击或拖拽进行绘制
+        </div>
+      )}
     </div>
   );
 }
