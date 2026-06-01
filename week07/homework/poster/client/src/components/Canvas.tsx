@@ -20,6 +20,8 @@ export default function Canvas() {
     tool,
     selectElement,
     addTextElement,
+    addShapeElement,
+    addImageElement,
     updateElement,
     setTool,
   } = useEditorStore();
@@ -266,6 +268,32 @@ export default function Canvas() {
     return 'default';
   };
 
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    if (!canvasRef.current) return;
+
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / scale;
+    const y = (e.clientY - rect.top) / scale;
+
+    const shapeSvg = e.dataTransfer.getData('application/poster-shape');
+    if (shapeSvg) {
+      addShapeElement(shapeSvg, x - 60, y - 60);
+      return;
+    }
+
+    const imageSrc = e.dataTransfer.getData('application/poster-image');
+    if (imageSrc) {
+      addImageElement(imageSrc, x - 100, y - 100);
+      return;
+    }
+  }, [scale, addShapeElement, addImageElement]);
+
   return (
     <>
       <div
@@ -312,6 +340,8 @@ export default function Canvas() {
               onMouseMove={spaceHeld ? undefined : handleCanvasMouseMove}
               onMouseUp={spaceHeld ? undefined : handleCanvasMouseUp}
               onContextMenu={handleContextMenu}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
             >
         {elements.map((element) => (
           <CanvasElement

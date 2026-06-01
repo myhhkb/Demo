@@ -77,7 +77,12 @@ export default function ShapePanel() {
           <button
             key={index}
             onClick={() => handleAddShape(shape.svg)}
-            className="aspect-square p-2 bg-gray-50 hover:bg-blue-50 hover:border-blue-300 border border-gray-200 rounded-lg transition flex items-center justify-center group"
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData('application/poster-shape', shape.svg);
+              e.dataTransfer.effectAllowed = 'copy';
+            }}
+            className="aspect-square p-2 bg-gray-50 hover:bg-blue-50 hover:border-blue-300 border border-gray-200 rounded-lg transition flex items-center justify-center group cursor-grab active:cursor-grabbing"
             title={shape.name}
           >
             <svg

@@ -103,18 +103,23 @@ export default function ImagePanel() {
         <h4 className="text-sm font-medium text-gray-700 mb-3">预设图片</h4>
         <div className="grid grid-cols-2 gap-2">
           {presetImages.map((src, index) => (
-            <button
+            <div
               key={index}
               onClick={() => handleAddImage(src)}
-              className="aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-blue-400 transition hover:shadow-md"
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData('application/poster-image', src);
+                e.dataTransfer.effectAllowed = 'copy';
+              }}
+              className="aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-blue-400 transition hover:shadow-md cursor-grab active:cursor-grabbing"
             >
               <img
                 src={src}
                 alt={`预设图片 ${index + 1}`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover pointer-events-none"
                 loading="lazy"
               />
-            </button>
+            </div>
           ))}
         </div>
       </div>
